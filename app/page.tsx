@@ -110,7 +110,7 @@ export default function Home() {
               AI-powered DevOps intelligence. When a pipeline fails, your team gets the diagnosis and fix in Slack — within seconds.
             </p>
             {!submitted ? (
-              <form onSubmit={e => { e.preventDefault(); if (email) setSubmitted(true); }} style={{ display: "flex", gap: 12, maxWidth: 420 }}>
+              <form onSubmit={async e => { e.preventDefault(); if (!email) return; await fetch("https://formspree.io/f/xlgwzwnr", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }); setSubmitted(true); }} style={{ display: "flex", gap: 12, maxWidth: 420 }}>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" required
                   style={{ flex: 1, padding: "12px 16px", background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, fontFamily: "monospace", fontSize: 14, color: "#fff", outline: "none" }} />
                 <button type="submit" style={{ padding: "12px 20px", background: "#64d8a3", color: "#020812", border: "none", borderRadius: 8, fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}>
