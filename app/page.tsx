@@ -235,9 +235,15 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <button style={{ width: "100%", padding: "14px", borderRadius: 8, border: plan.highlight ? "none" : "1px solid #1e293b", background: plan.highlight ? "#64d8a3" : "#0f172a", color: plan.highlight ? "#020812" : "#fff", fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                {plan.cta}
-              </button>
+              {plan.highlight ? (
+  <a href="https://pipelineiq.dev" style={{ width: "100%", padding: "14px", borderRadius: 8, border: "none", background: "#64d8a3", color: "#020812", fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: "pointer", textAlign: "center", display: "block" }}>
+    {plan.cta}
+  </a>
+) : (
+  <button style={{ width: "100%", padding: "14px", borderRadius: 8, border: "1px solid #1e293b", background: "#0f172a", color: "#fff", fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+    {plan.cta}
+  </button>
+)}
             </div>
           ))}
         </div>
