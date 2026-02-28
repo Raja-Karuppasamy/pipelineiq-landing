@@ -236,7 +236,7 @@ export default function Home() {
                 ))}
               </ul>
               {plan.highlight ? (
-  <a href="https://pipelineiq.dev" style={{ width: "100%", padding: "14px", borderRadius: 8, border: "none", background: "#64d8a3", color: "#020812", fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: "pointer", textAlign: "center", display: "block" }}>
+  <a href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({top: 0, behavior: 'smooth'}); (document.querySelector('input[type="email"]') as HTMLInputElement)?.focus(); }} style={{ width: "100%", padding: "14px", borderRadius: 8, border: "none", background: "#64d8a3", color: "#020812", fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: "pointer", textAlign: "center", display: "block" }}>
     {plan.cta}
   </a>
 ) : (
