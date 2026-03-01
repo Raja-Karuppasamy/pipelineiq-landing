@@ -59,11 +59,13 @@ export default function Dashboard() {
   const [runs, setRuns] = useState<PipelineRun[]>([]);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [dora, setDora] = useState<any>(null);
+  const [selectedRepo, setSelectedRepo] = useState<string>("all");
+  const [repos, setRepos] = useState<string[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"overview" | "runs" | "insights" | "dora">("overview");
-
+  const filteredRuns = selectedRepo === "all" ? runs : runs.filter(r => r.repo_full_name === selectedRepo);
   useEffect(() => {
     const saved = localStorage.getItem("piq_api_key");
     if (saved) {
@@ -101,6 +103,8 @@ export default function Dashboard() {
       const doraData = await doraRes.json();
       setDora(doraData.data || null);
       setRuns(runsArr);
+      const uniqueRepos = [...new Set(runsArr.map((r: PipelineRun) => r.repo_full_name))] as string[];
+      setRepos(uniqueRepos);
       setInsights(insightsArr);
 
       // Compute stats
@@ -217,6 +221,23 @@ export default function Dashboard() {
               ))}
             </div>
 
+            {/* Repo Selector */}
+<div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+  <span style={{ fontFamily: "monospace", fontSize: 12, color: "#475569" }}>Repo:</span>
+  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+    <button onClick={() => setSelectedRepo("all")}
+      style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${selectedRepo === "all" ? "#64d8a3" : "#1e293b"}`, background: selectedRepo === "all" ? "#64d8a320" : "transparent", color: selectedRepo === "all" ? "#64d8a3" : "#475569", fontFamily: "monospace", fontSize: 12, cursor: "pointer" }}>
+      All repos
+    </button>
+    {repos.map((repo, i) => (
+      <button key={i} onClick={() => setSelectedRepo(repo)}
+        style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${selectedRepo === repo ? "#64d8a3" : "#1e293b"}`, background: selectedRepo === repo ? "#64d8a320" : "transparent", color: selectedRepo === repo ? "#64d8a3" : "#475569", fontFamily: "monospace", fontSize: 12, cursor: "pointer" }}>
+        {repo}
+      </button>
+    ))}
+  </div>
+</div>
+
             {/* Tabs */}
             <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #0f172a", paddingBottom: 0 }}>
               {(["overview", "runs", "insights", "dora"] as const).map(tab => (
@@ -236,7 +257,7 @@ export default function Dashboard() {
                     🔴 Recent Failures
                   </div>
                   <div style={{ padding: "8px 0" }}>
-                    {runs.filter(r => r.status === "failure").slice(0, 5).map((run, i) => (
+                    {filteredRuns.filter(r => r.status === "failure").slice(0, 5).map((run, i) => (
                       <div key={i} style={{ padding: "12px 20px", borderBottom: "1px solid #0a1628", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
                           <div style={{ fontFamily: "monospace", fontSize: 13, color: "#fff", marginBottom: 3 }}>{run.repo_full_name}</div>
@@ -288,7 +309,7 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {runs.map((run, i) => (
+                    {filteredRuns.map((run, i) => (
                       <tr key={i} style={{ borderBottom: "1px solid #0a1628" }}>
                         <td style={{ padding: "12px 16px", fontFamily: "monospace", fontSize: 13, color: "#e2e8f0" }}>{run.repo_full_name}</td>
                         <td style={{ padding: "12px 16px", fontFamily: "monospace", fontSize: 12, color: "#64748b" }}>{run.branch}</td>
@@ -302,7 +323,7 @@ export default function Dashboard() {
                         <td style={{ padding: "12px 16px", fontFamily: "monospace", fontSize: 11, color: "#334155" }}>{timeAgo(run.created_at)}</td>
                       </tr>
                     ))}
-                    {runs.length === 0 && (
+                    {filteredRuns.length === 0 && (
                       <tr><td colSpan={6} style={{ padding: "48px", textAlign: "center", fontFamily: "monospace", fontSize: 13, color: "#334155" }}>No pipeline runs yet</td></tr>
                     )}
                   </tbody>
