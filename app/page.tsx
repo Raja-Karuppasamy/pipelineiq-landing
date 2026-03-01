@@ -195,13 +195,14 @@ export default function Home() {
           </div>
           <div style={{ background: "#020c1a", padding: "28px 32px" }}>
             <pre style={{ fontFamily: "monospace", fontSize: 13, lineHeight: 2, color: "#94a3b8", overflowX: "auto" }}>{`# Add one step to any GitHub Actions workflow
-- name: Notify PipelineIQ
+- name: PipelineIQ
   if: always()
-  run: |
-    curl -X POST $PIPELINEIQ_URL/api/v1/pipelines/runs \\
-      -H "X-PipelineIQ-Key: $PIPELINEIQ_API_KEY" \\
-      -H "Content-Type: application/json" \\
-      -d '{"repo":"acme/backend","status":"failure","branch":"main"}'`}</pre>
+  uses: Raja-Karuppasamy/pipelineiq-action@v1
+  with:
+    api-key: \${{ secrets.PIPELINEIQ_API_KEY }}
+   job-status: \${{ job.status }}
+
+# That's it. AI diagnosis lands in Slack on every failure.`}</pre>
           </div>
         </div>
       </section>
