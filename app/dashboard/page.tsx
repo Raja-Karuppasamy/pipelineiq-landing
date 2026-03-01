@@ -58,10 +58,11 @@ export default function Dashboard() {
   const [inputKey, setInputKey] = useState("");
   const [runs, setRuns] = useState<PipelineRun[]>([]);
   const [insights, setInsights] = useState<Insight[]>([]);
+  const [dora, setDora] = useState<any>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<"overview" | "runs" | "insights">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "runs" | "insights" | "dora">("overview");
 
   useEffect(() => {
     const saved = localStorage.getItem("piq_api_key");
@@ -80,9 +81,11 @@ export default function Dashboard() {
     try {
       const headers = { "X-PipelineIQ-Key": apiKey };
 
-      const [runsRes, insightsRes] = await Promise.all([
-        fetch(`${API_BASE}/api/v1/pipelines/runs`, { headers }),
-        fetch(`${API_BASE}/api/v1/insights/?limit=20`, { headers }),      ]);
+      const [runsRes, insightsRes, doraRes] = await Promise.all([
+  fetch(`${API_BASE}/api/v1/pipelines/runs`, { headers }),
+  fetch(`${API_BASE}/api/v1/insights/?limit=20`, { headers }),
+  fetch(`${API_BASE}/api/v1/insights/dora`, { headers }),
+]);
 
       if (!runsRes.ok) {
         setError("Invalid API key. Please check and try again.");
@@ -95,7 +98,8 @@ export default function Dashboard() {
 
       const runsArr = runsData.data?.runs || runsData.data || [];
       const insightsArr = insightsData.data?.insights || insightsData.data || [];
-
+      const doraData = await doraRes.json();
+      setDora(doraData.data || null);
       setRuns(runsArr);
       setInsights(insightsArr);
 
@@ -215,7 +219,7 @@ export default function Dashboard() {
 
             {/* Tabs */}
             <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #0f172a", paddingBottom: 0 }}>
-              {(["overview", "runs", "insights"] as const).map(tab => (
+              {(["overview", "runs", "insights", "dora"] as const).map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   style={{ padding: "10px 20px", background: "transparent", border: "none", borderBottom: activeTab === tab ? "2px solid #64d8a3" : "2px solid transparent", color: activeTab === tab ? "#64d8a3" : "#475569", fontFamily: "monospace", fontSize: 13, cursor: "pointer", textTransform: "capitalize", marginBottom: -1 }}>
                   {tab}
@@ -343,6 +347,54 @@ export default function Dashboard() {
             )}
           </>
         )}
+        {/* DORA Tab */}
+{activeTab === "dora" && dora && (
+  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 20 }}>
+    {[
+      { key: "deployment_frequency", label: "Deployment Frequency", icon: "🚀", desc: "How often you deploy to production" },
+      { key: "change_failure_rate", label: "Change Failure Rate", icon: "💥", desc: "% of deployments causing failures" },
+      { key: "mean_time_to_recovery", label: "Mean Time to Recovery", icon: "🔧", desc: "How long to recover from failures" },
+      { key: "lead_time", label: "Lead Time", icon: "⏱", desc: "Time from commit to production" },
+    ].map((metric, i) => {
+      const data = dora[metric.key];
+      const ratingColor: Record<string, string> = { elite: "#64d8a3", high: "#a78bfa", medium: "#fbbf24", low: "#ff6b6b" };
+      return (
+        <div key={i} style={{ borderRadius: 12, border: `1px solid ${ratingColor[data?.rating] || "#0f172a"}30`, background: "#020c1a", padding: "28px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 24 }}>{metric.icon}</span>
+              <span style={{ fontFamily: "monospace", fontSize: 13, color: "#94a3b8" }}>{metric.label}</span>
+            </div>
+            <span style={{ padding: "3px 10px", borderRadius: 4, background: `${ratingColor[data?.rating]}20`, color: ratingColor[data?.rating], fontFamily: "monospace", fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const }}>
+              {data?.rating}
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 42, fontWeight: 900, fontFamily: "monospace", color: ratingColor[data?.rating] || "#fff" }}>{data?.value}</span>
+            <span style={{ fontFamily: "monospace", fontSize: 13, color: "#475569" }}>{data?.unit}</span>
+          </div>
+          <p style={{ fontSize: 12, color: "#334155", fontFamily: "monospace" }}>{metric.desc}</p>
+        </div>
+      );
+    })}
+    <div style={{ gridColumn: "1 / -1", borderRadius: 12, border: "1px solid #0f172a", background: "#020c1a", padding: "20px 28px", display: "flex", gap: 48 }}>
+      <div>
+        <div style={{ fontFamily: "monospace", fontSize: 11, color: "#475569", marginBottom: 4 }}>Period</div>
+        <div style={{ fontFamily: "monospace", fontSize: 16, fontWeight: 700 }}>{dora.period_days} days</div>
+      </div>
+      <div>
+        <div style={{ fontFamily: "monospace", fontSize: 11, color: "#475569", marginBottom: 4 }}>Total Runs</div>
+        <div style={{ fontFamily: "monospace", fontSize: 16, fontWeight: 700 }}>{dora.total_runs}</div>
+      </div>
+      <div>
+        <div style={{ fontFamily: "monospace", fontSize: 11, color: "#475569", marginBottom: 4 }}>DORA Rating</div>
+        <div style={{ fontFamily: "monospace", fontSize: 16, fontWeight: 700, color: "#64d8a3" }}>
+          {[dora.deployment_frequency?.rating, dora.change_failure_rate?.rating, dora.mean_time_to_recovery?.rating, dora.lead_time?.rating].filter(r => r === "elite").length >= 3 ? "Elite" : "Developing"}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
       </div>
     </main>
   );
