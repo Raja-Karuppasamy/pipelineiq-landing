@@ -109,20 +109,12 @@ export default function Home() {
             <p style={{ fontSize: 17, color: "#64748b", lineHeight: 1.7, maxWidth: 420 }}>
               AI-powered DevOps intelligence. When a pipeline fails, your team gets the diagnosis and fix in Slack — within seconds.
             </p>
-            {!submitted ? (
-              <form onSubmit={async e => { e.preventDefault(); if (!email) return; await fetch("https://formspree.io/f/xlgwzwnr", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }); setSubmitted(true); }} style={{ display: "flex", gap: 12, maxWidth: 420 }}>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" required
-                  style={{ flex: 1, padding: "12px 16px", background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, fontFamily: "monospace", fontSize: 14, color: "#fff", outline: "none" }} />
-                <button type="submit" style={{ padding: "12px 20px", background: "#64d8a3", color: "#020812", border: "none", borderRadius: 8, fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}>
-                  Get Early Access
-                </button>
-              </form>
-            ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#0f172a", border: "1px solid rgba(100,216,163,0.3)", borderRadius: 8, maxWidth: 420 }}>
-                <span style={{ color: "#64d8a3" }}>✓</span>
-                <span style={{ fontFamily: "monospace", fontSize: 13, color: "#64d8a3" }}>You are on the list. We will be in touch soon.</span>
-              </div>
-            )}
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <a href="/signup" style={{ padding: "12px 24px", background: "#64d8a3", color: "#020812", border: "none", borderRadius: 8, fontFamily: "monospace", fontWeight: 700, fontSize: 14, cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" as const }}>
+                Start Free — Get API Key →
+              </a>
+              <span style={{ fontFamily: "monospace", fontSize: 12, color: "#475569" }}>No credit card required</span>
+            </div>
             <div style={{ display: "flex", gap: 24, fontSize: 12, color: "#334155", fontFamily: "monospace" }}>
               <span>✓ No credit card</span><span>✓ 2-min setup</span><span>✓ GitHub Actions</span>
             </div>
