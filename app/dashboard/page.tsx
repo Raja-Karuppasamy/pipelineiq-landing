@@ -59,12 +59,13 @@ export default function Dashboard() {
   const [runs, setRuns] = useState<PipelineRun[]>([]);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [dora, setDora] = useState<any>(null);
+  const [recurring, setRecurring] = useState<any>(null);
   const [selectedRepo, setSelectedRepo] = useState<string>("all");
   const [repos, setRepos] = useState<string[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<"overview" | "runs" | "insights" | "dora">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "runs" | "insights" | "dora" | "recurring">("overview");
   const filteredRuns = selectedRepo === "all" ? runs : runs.filter(r => r.repo_full_name === selectedRepo);
   useEffect(() => {
     const saved = localStorage.getItem("piq_api_key");
@@ -83,10 +84,11 @@ export default function Dashboard() {
     try {
       const headers = { "X-PipelineIQ-Key": apiKey };
 
-      const [runsRes, insightsRes, doraRes] = await Promise.all([
+      const [runsRes, insightsRes, doraRes, recurringRes] = await Promise.all([
   fetch(`${API_BASE}/api/v1/pipelines/runs`, { headers }),
   fetch(`${API_BASE}/api/v1/insights/?limit=20`, { headers }),
   fetch(`${API_BASE}/api/v1/insights/dora`, { headers }),
+  fetch(`${API_BASE}/api/v1/insights/recurring-failures`, { headers }),
 ]);
 
       if (!runsRes.ok) {
@@ -102,6 +104,8 @@ export default function Dashboard() {
       const insightsArr = insightsData.data?.insights || insightsData.data || [];
       const doraData = await doraRes.json();
       setDora(doraData.data || null);
+      const recurringData = await recurringRes.json();
+      setRecurring(recurringData.data || null);
       setRuns(runsArr);
       const uniqueRepos = [...new Set(runsArr.map((r: PipelineRun) => r.repo_full_name))] as string[];
       setRepos(uniqueRepos);
@@ -240,7 +244,7 @@ export default function Dashboard() {
 
             {/* Tabs */}
             <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #0f172a", paddingBottom: 0 }}>
-              {(["overview", "runs", "insights", "dora"] as const).map(tab => (
+              {(["overview", "runs", "insights", "dora", "recurring"] as const).map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   style={{ padding: "10px 20px", background: "transparent", border: "none", borderBottom: activeTab === tab ? "2px solid #64d8a3" : "2px solid transparent", color: activeTab === tab ? "#64d8a3" : "#475569", fontFamily: "monospace", fontSize: 13, cursor: "pointer", textTransform: "capitalize", marginBottom: -1 }}>
                   {tab}
@@ -414,6 +418,69 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+  </div>
+)}
+{activeTab === "recurring" && (
+  <div>
+    {!recurring || recurring.patterns?.length === 0 ? (
+      <div style={{ textAlign: "center", padding: "60px 20px", color: "#475569", fontFamily: "monospace" }}>
+        <div style={{ fontSize: 40, marginBottom: 16 }}>✅</div>
+        <div style={{ fontSize: 16, color: "#64d8a3", marginBottom: 8 }}>No recurring failures detected</div>
+        <div style={{ fontSize: 13 }}>Patterns appear after 3+ identical failures in 30 days</div>
+      </div>
+    ) : (
+      <div style={{ display: "flex", flexDirection: "column" as const, gap: 16 }}>
+        <div style={{ fontFamily: "monospace", fontSize: 13, color: "#475569", marginBottom: 8 }}>
+          {recurring.recurring_count} recurring pattern{recurring.recurring_count !== 1 ? "s" : ""} detected from {recurring.total_failures} failures in the last {recurring.period_days} days
+        </div>
+        {recurring.patterns.map((pattern: any, i: number) => {
+          const severityColor: Record<string, string> = { critical: "#ff6b6b", high: "#fbbf24", medium: "#fb923c" };
+          return (
+            <div key={i} style={{ borderRadius: 12, border: `1px solid ${severityColor[pattern.severity]}40`, background: "#020c1a", padding: 24 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontFamily: "monospace", fontSize: 14, color: "#fff", fontWeight: 700, marginBottom: 4 }}>
+                    🔁 {pattern.repo}
+                  </div>
+                  <div style={{ fontFamily: "monospace", fontSize: 12, color: "#475569" }}>
+                    {pattern.workflow}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <span style={{ padding: "3px 10px", borderRadius: 4, background: `${severityColor[pattern.severity]}20`, color: severityColor[pattern.severity], fontFamily: "monospace", fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const }}>
+                    {pattern.severity}
+                  </span>
+                  <span style={{ fontFamily: "monospace", fontSize: 13, color: "#ff6b6b", fontWeight: 700 }}>
+                    {pattern.occurrences}x failures
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 24, marginBottom: 16 }}>
+                <div style={{ fontFamily: "monospace", fontSize: 12, color: "#475569" }}>
+                  📅 First seen: <span style={{ color: "#94a3b8" }}>{new Date(pattern.first_seen).toLocaleDateString()}</span>
+                </div>
+                <div style={{ fontFamily: "monospace", fontSize: 12, color: "#475569" }}>
+                  🕐 Last seen: <span style={{ color: "#94a3b8" }}>{new Date(pattern.last_seen).toLocaleDateString()}</span>
+                </div>
+                <div style={{ fontFamily: "monospace", fontSize: 12, color: "#475569" }}>
+                  📈 Frequency: <span style={{ color: "#fbbf24" }}>{pattern.frequency_per_week}x/week</span>
+                </div>
+              </div>
+              {pattern.recommended_fix && (
+                <div style={{ background: "#0a1628", borderRadius: 8, padding: 16, borderLeft: "3px solid #64d8a3" }}>
+                  <div style={{ fontFamily: "monospace", fontSize: 11, color: "#475569", marginBottom: 8, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>
+                    ✅ Recommended Fix
+                  </div>
+                  <div style={{ fontFamily: "monospace", fontSize: 12, color: "#94a3b8", lineHeight: 1.8, whiteSpace: "pre-wrap" as const }}>
+                    {pattern.recommended_fix}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    )}
   </div>
 )}
       </div>
