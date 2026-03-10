@@ -1,10 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export function verifyWebhookSignature(
   payload: string,
@@ -30,7 +32,7 @@ export async function handleWorkflowRunEvent(payload: any) {
   const run = workflow_run;
 
   // Find the org by matching the repo
-  const { data: trackedRepo } = await supabase
+  const { data: trackedRepo } = await getSupabase()
     .from("tracked_repos")
     .select("org_id")
     .eq("repo_full_name", repository.full_name)
@@ -42,7 +44,7 @@ export async function handleWorkflowRunEvent(payload: any) {
 
   if (!orgId) {
     // Auto-track: find any org and create a tracked repo entry
-    const { data: org } = await supabase
+    const { data: org } = await getSupabase()
       .from("organizations")
       .select("id")
       .limit(1)
@@ -53,7 +55,7 @@ export async function handleWorkflowRunEvent(payload: any) {
     orgId = org.id;
 
     // Auto-add to tracked repos
-    await supabase.from("tracked_repos").insert({
+    await getSupabase().from("tracked_repos").insert({
       org_id: orgId,
       repo_full_name: repository.full_name,
       github_repo_id: String(repository.id),
@@ -62,7 +64,7 @@ export async function handleWorkflowRunEvent(payload: any) {
   }
 
   // Insert pipeline run
-  const { data: pipelineRun, error } = await supabase
+  const { data: pipelineRun, error } = await getSupabase()
     .from("pipeline_runs")
     .insert({
       org_id: orgId,
@@ -109,7 +111,7 @@ export async function handleWorkflowRunEvent(payload: any) {
         ? `Deploy failed after: ${run.head_commit.message.split("\n")[0]}`
         : `Workflow "${run.name}" failed`;
 
-    await supabase.from("incidents").insert({
+    await getSupabase().from("incidents").insert({
       org_id: orgId,
       pipeline_run_id: pipelineRun.id,
       repo_full_name: repository.full_name,
