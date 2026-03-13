@@ -126,5 +126,22 @@ export async function handleWorkflowRunEvent(payload: any) {
     });
   }
 
+  // Score the deploy risk
+  if (pipelineRun) {
+    try {
+      const { scoreDeployRisk } = await import("@/lib/risk/scorer");
+      const riskResult = await scoreDeployRisk(pipelineRun.id, orgId, {
+        triggeredBy: run.actor?.login || undefined,
+        testsPassed: run.conclusion === "success" ? true : run.conclusion === "failure" ? false : null,
+        deployHour: new Date(run.run_started_at || run.updated_at).getUTCHours(),
+        deployDayOfWeek: new Date(run.run_started_at || run.updated_at).getUTCDay(),
+      });
+      console.log(`Risk score for ${repository.full_name}: ${riskResult.score} (${riskResult.riskLevel})`);
+    } catch (err) {
+      console.error("Risk scoring failed:", err);
+    }
+  }
+
   return { success: true, pipeline_run_id: pipelineRun?.id };
+
 }
