@@ -1,3 +1,4 @@
+import { scoreDeployRisk } from "@/lib/risk/scorer";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
