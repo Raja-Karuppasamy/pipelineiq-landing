@@ -1,6 +1,7 @@
 import { scoreDeployRisk } from "@/lib/risk/scorer";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import { trackWorkflowCost } from "../costs/calculator";
 
 function getSupabase() {
   return createClient(
@@ -146,6 +147,30 @@ export async function handleWorkflowRunEvent(payload: any) {
     }
   }
 
-  return { success: true, pipeline_run_id: pipelineRun?.id, riskScore, riskError };
+  // Track workflow cost
+  let costResult = null;
+  if (pipelineRun) {
+    try {
+      costResult = await trackWorkflowCost(
+        pipelineRun.id,
+        orgId,
+        repository.full_name,
+        run.name,
+        run.run_started_at
+          ? Math.round(
+              (new Date(run.updated_at).getTime() -
+                new Date(run.run_started_at).getTime()) /
+                1000
+            )
+          : 0,
+        null, // runner_os not available at workflow level
+        run.run_started_at
+      );
+    } catch (err: any) {
+      console.error("Cost tracking failed:", err);
+    }
+  }
+
+  return { success: true, pipeline_run_id: pipelineRun?.id, riskScore, riskError, costResult };
 
 }
