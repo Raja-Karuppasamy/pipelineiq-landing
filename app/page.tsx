@@ -114,9 +114,10 @@ export default function Home() {
                 Start Free — Get API Key →
               </a>
               <a href="/overview" style={{
-  padding: "10px 24px", borderRadius: "8px",
-  background: "rgba(255,255,255,0.1)", color: "white",
-  fontSize: "14px", fontWeight: 500, textDecoration: "none",
+  padding: "14px 28px", borderRadius: "8px",
+  background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)",
+  color: "white", fontSize: "14px", fontWeight: 500, textDecoration: "none",
+  display: "inline-flex", alignItems: "center", gap: "6px",
 }}>
   Dashboard →
 </a>
