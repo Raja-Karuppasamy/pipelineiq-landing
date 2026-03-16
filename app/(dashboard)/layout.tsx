@@ -81,13 +81,7 @@ export default function DashboardLayout({
       }}>
         {/* Logo */}
         <div style={{ padding: "16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <a href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
-            <div style={{
-              width: "28px", height: "28px", borderRadius: "6px",
-              background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "white", fontWeight: 700, fontSize: "12px", fontFamily: "monospace",
-            }}>P</div>
+          <a href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
             <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: "14px", color: "white" }}>
               PipelineIQ<span style={{ color: "#3b82f6" }}>Pro</span>
             </span>
