@@ -2,15 +2,17 @@
 import { useState, useEffect } from "react";
 
 const TERMINAL_LINES = [
-  { delay: 0, text: "$ pipelineiq analyze --repo acme/backend", type: "cmd" },
-  { delay: 900, text: "✓ Fetching pipeline data...", type: "info" },
-  { delay: 1600, text: "✓ Analyzing 47 workflow runs...", type: "info" },
-  { delay: 2300, text: "⚠ CRITICAL: Deploy Production failed", type: "error" },
-  { delay: 3000, text: "🧠 AI Diagnosis:", type: "label" },
-  { delay: 3200, text: "   Cannot connect to db.production:5432.", type: "diag" },
-  { delay: 3500, text: "   Security group blocking port 5432.", type: "diag" },
-  { delay: 4000, text: "✅ Fix: Open port 5432 in AWS SG sg-0a1b2c3d", type: "fix" },
-  { delay: 4500, text: "⏱  Est. time saved: 47 minutes", type: "save" },
+  { delay: 0, text: "$ git push origin main", type: "cmd" },
+  { delay: 700, text: "✓ CI workflow triggered...", type: "info" },
+  { delay: 1400, text: "✓ Build passed — 24s", type: "info" },
+  { delay: 2000, text: "⚡ PipelineIQ scoring deploy...", type: "label" },
+  { delay: 2600, text: "   Lines changed: 342  (+15 pts)", type: "diag" },
+  { delay: 2900, text: "   Files touched: 18   (+10 pts)", type: "diag" },
+  { delay: 3200, text: "   Tests: all pass      (+0 pts)", type: "diag" },
+  { delay: 3500, text: "   Friday 4:47pm        (+20 pts)", type: "error" },
+  { delay: 4000, text: "⚠ Risk Score: 67/100 — WARNING", type: "error" },
+  { delay: 4500, text: "📣 Slack alert sent to #pipeline-alerts", type: "fix" },
+  { delay: 5000, text: "💰 Cost: $0.19 (Linux, 24 min)", type: "save" },
 ];
 
 function Terminal() {
@@ -35,7 +37,7 @@ function Terminal() {
         <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#64d8a3" }} />
         <span style={{ marginLeft: 12, fontFamily: "monospace", fontSize: 12, color: "#475569" }}>pipelineiq — terminal</span>
       </div>
-      <div style={{ background: "#020c1a", padding: "24px", minHeight: 260 }}>
+      <div style={{ background: "#020c1a", padding: "24px", minHeight: 280 }}>
         {TERMINAL_LINES.slice(0, visibleLines).map((line, i) => (
           <div key={i} style={{ fontFamily: "monospace", fontSize: 13, lineHeight: "2", color: colors[line.type] || "#fff" }}>
             {line.text}
@@ -50,12 +52,12 @@ function Terminal() {
 }
 
 const FEATURES = [
-  { icon: "⚡", title: "Instant Detection", desc: "Know the moment a pipeline fails — before your team even opens Slack." },
-  { icon: "🧠", title: "AI Root Cause Analysis", desc: "Claude reads error logs and returns exact fixes. Specific steps, not generic advice." },
-  { icon: "📊", title: "Pipeline Analytics", desc: "Success rates, avg durations, failure trends across all your repositories." },
-  { icon: "🔔", title: "Slack Alerts", desc: "Rich alerts with repo, branch, commit, diagnosis and fix. Zero context-switching." },
-  { icon: "🌍", title: "Environment Drift", desc: "Catch config mismatches between dev, staging, and production before outages." },
-  { icon: "🔌", title: "2-Min Integration", desc: "One GitHub Actions step. One API key. Works with any CI/CD workflow." },
+  { icon: "🛡️", title: "Deploy Guard", desc: "Every push gets a 0–100 risk score. Lines changed, test results, time of day, author history — scored automatically before it hits production.", tag: "Before Deploy", color: "#10b981" },
+  { icon: "💰", title: "Cost Tracker", desc: "See exactly where your GitHub Actions budget goes. Per-repo, per-workflow spend with automatic waste detection for flaky reruns.", tag: "During Runs", color: "#f59e0b" },
+  { icon: "🔥", title: "Incident Replay", desc: "When deploys fail, get an auto-generated timeline of what happened — commits, PRs, workflow logs. Export to Markdown for postmortems.", tag: "After Failure", color: "#ef4444" },
+  { icon: "📣", title: "Slack Alerts", desc: "Morning digest of overnight deploys. Instant alerts when risk scores spike. Incident notifications with full context.", tag: "Real-time", color: "#3b82f6" },
+  { icon: "📊", title: "Team Dashboard", desc: "One view for engineering managers — deploys, risk trends, spend, and incidents across all your repos.", tag: "Visibility", color: "#8b5cf6" },
+  { icon: "🔌", title: "2-Minute Setup", desc: "Install the GitHub App, connect your repos, and see your first risk score in under 5 minutes. No config files.", tag: "Easy", color: "#64d8a3" },
 ];
 
 const PRICING = [
@@ -65,30 +67,29 @@ const PRICING = [
 ];
 
 export default function Home() {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-
   return (
     <main style={{ minHeight: "100vh", background: "#020812", color: "#fff", fontFamily: "system-ui, sans-serif", overflowX: "hidden" }}>
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         a { text-decoration: none; }
-        ::placeholder { color: #334155; }
         button:hover { opacity: 0.9; }
+        html { scroll-behavior: smooth; }
       `}</style>
 
       {/* Nav */}
       <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 48px", borderBottom: "1px solid #0f172a", position: "sticky", top: 0, background: "rgba(2,8,18,0.95)", backdropFilter: "blur(12px)", zIndex: 100 }}>
-        
-          <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 18 }}>PipelineIQ</span>
-        
+        <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 18 }}>
+          PipelineIQ<span style={{ color: "#3b82f6" }}>Pro</span>
+        </span>
         <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
           <a href="#features" style={{ color: "#64748b", fontSize: 14 }}>Features</a>
           <a href="#pricing" style={{ color: "#64748b", fontSize: 14 }}>Pricing</a>
-          <a href="https://pipelineiq-production-3496.up.railway.app/docs" target="_blank" style={{ color: "#64748b", fontSize: 14 }}>Docs</a>
-          <a href="https://pipelineiq-production-3496.up.railway.app/docs" target="_blank"
-            style={{ padding: "8px 18px", background: "#64d8a3", color: "#020812", borderRadius: 6, fontFamily: "monospace", fontWeight: 700, fontSize: 13 }}>
-            API Docs →
+          <a href="#how" style={{ color: "#64748b", fontSize: 14 }}>How it works</a>
+          <a href="/overview" style={{ padding: "8px 18px", background: "transparent", border: "1px solid #1e293b", color: "#fff", borderRadius: 6, fontFamily: "monospace", fontWeight: 700, fontSize: 13 }}>
+            Dashboard
+          </a>
+          <a href="/signup" style={{ padding: "8px 18px", background: "#3b82f6", color: "#fff", borderRadius: 6, fontFamily: "monospace", fontWeight: 700, fontSize: 13 }}>
+            Get Started →
           </a>
         </div>
       </nav>
@@ -98,27 +99,26 @@ export default function Home() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 999, border: "1px solid #1e293b", background: "#0f172a", width: "fit-content" }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#64d8a3", display: "inline-block" }} />
-              <span style={{ fontFamily: "monospace", fontSize: 12, color: "#64d8a3" }}>Now in beta — free for early teams</span>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#3b82f6", display: "inline-block" }} />
+              <span style={{ fontFamily: "monospace", fontSize: 12, color: "#60a5fa" }}>Now in beta — free for early teams</span>
             </div>
             <div>
-              <h1 style={{ fontSize: 52, fontWeight: 900, lineHeight: 1.08, letterSpacing: "-2px" }}>Your pipelines</h1>
-              <h1 style={{ fontSize: 52, fontWeight: 900, lineHeight: 1.08, letterSpacing: "-2px", color: "#64d8a3" }}>fail smarter</h1>
-              <h1 style={{ fontSize: 52, fontWeight: 900, lineHeight: 1.08, letterSpacing: "-2px", color: "#1e293b" }}>with PipelineIQ</h1>
+              <h1 style={{ fontSize: 52, fontWeight: 900, lineHeight: 1.08, letterSpacing: "-2px" }}>Know what shipped.</h1>
+              <h1 style={{ fontSize: 52, fontWeight: 900, lineHeight: 1.08, letterSpacing: "-2px", color: "#3b82f6" }}>Before it breaks.</h1>
             </div>
-            <p style={{ fontSize: 17, color: "#64748b", lineHeight: 1.7, maxWidth: 420 }}>
-              AI-powered DevOps intelligence. When a pipeline fails, your team gets the diagnosis and fix in Slack — within seconds.
+            <p style={{ fontSize: 17, color: "#64748b", lineHeight: 1.7, maxWidth: 440 }}>
+              Deployment risk scores, CI/CD cost tracking, and automated incident timelines — one dashboard for engineering leaders.
             </p>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <a href="/signup" style={{ padding: "12px 24px", background: "#64d8a3", color: "#020812", border: "none", borderRadius: 8, fontFamily: "monospace", fontWeight: 700, fontSize: 14, cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Start Free — Get API Key →
+              <a href="/signup" style={{ padding: "14px 28px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: 8, fontFamily: "monospace", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" as const }}>
+                Connect GitHub — Free →
               </a>
-              <a href="/overview" style={{ padding: "12px 24px", borderRadius: 8, background: "transparent", border: "1px solid #1e293b", color: "#fff", fontFamily: "monospace", fontWeight: 700, fontSize: 14, textDecoration: "none", whiteSpace: "nowrap" }}>
+              <a href="/overview" style={{ padding: "14px 28px", borderRadius: 8, background: "transparent", border: "1px solid #1e293b", color: "#fff", fontFamily: "monospace", fontWeight: 700, fontSize: 14, whiteSpace: "nowrap" as const }}>
                 Dashboard →
               </a>
             </div>
             <div style={{ display: "flex", gap: 24, fontSize: 12, color: "#334155", fontFamily: "monospace" }}>
-              <span>✓ No credit card</span><span>✓ 2-min setup</span><span>✓ GitHub Actions</span>
+              <span>✓ No credit card</span><span>✓ 5-min setup</span><span>✓ GitHub App</span>
             </div>
           </div>
           <Terminal />
@@ -128,9 +128,14 @@ export default function Home() {
       {/* Stats */}
       <section style={{ borderTop: "1px solid #0f172a", borderBottom: "1px solid #0f172a" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "48px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 32, textAlign: "center" }}>
-          {[{ value: "47min", label: "avg time saved per incident" }, { value: "92%", label: "diagnosis accuracy" }, { value: "< 5s", label: "alert delivery" }, { value: "2min", label: "integration time" }].map((s, i) => (
+          {[
+            { value: "0–100", label: "risk score per deploy" },
+            { value: "$0.008", label: "per-minute cost tracking" },
+            { value: "< 5s", label: "Slack alert delivery" },
+            { value: "5min", label: "setup time" },
+          ].map((s, i) => (
             <div key={i}>
-              <div style={{ fontSize: 36, fontWeight: 900, fontFamily: "monospace", color: "#64d8a3", marginBottom: 6 }}>{s.value}</div>
+              <div style={{ fontSize: 36, fontWeight: 900, fontFamily: "monospace", color: "#3b82f6", marginBottom: 6 }}>{s.value}</div>
               <div style={{ fontSize: 12, color: "#475569", fontFamily: "monospace" }}>{s.label}</div>
             </div>
           ))}
@@ -138,16 +143,16 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section style={{ maxWidth: 1100, margin: "0 auto", padding: "96px 48px" }}>
+      <section id="how" style={{ maxWidth: 1100, margin: "0 auto", padding: "96px 48px" }}>
         <div style={{ textAlign: "center", marginBottom: 56 }}>
-          <div style={{ fontFamily: "monospace", fontSize: 11, color: "#64d8a3", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12 }}>How it works</div>
-          <h2 style={{ fontSize: 38, fontWeight: 900, letterSpacing: "-1px" }}>From failure to fix in seconds</h2>
+          <div style={{ fontFamily: "monospace", fontSize: 11, color: "#3b82f6", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12 }}>How it works</div>
+          <h2 style={{ fontSize: 38, fontWeight: 900, letterSpacing: "-1px" }}>Three modules. One dashboard.</h2>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2, borderRadius: 12, overflow: "hidden", background: "#0f172a" }}>
           {[
-            { step: "01", title: "Pipeline fails", desc: "A workflow completes on GitHub. One step sends the result and logs to PipelineIQ.", icon: "💥" },
-            { step: "02", title: "AI analyzes", desc: "Claude reads the error logs, identifies the root cause, and generates a specific fix.", icon: "🧠" },
-            { step: "03", title: "Team gets the fix", desc: "A Slack alert arrives with diagnosis and steps. Engineer resolves in minutes, not hours.", icon: "✅" },
+            { step: "01", title: "Before: Risk Score", desc: "Every push to production gets a 0–100 risk score based on lines changed, test results, time of day, and author history. High-risk deploys trigger Slack alerts.", icon: "🛡️", color: "#10b981" },
+            { step: "02", title: "During: Cost Track", desc: "Every CI/CD run is costed automatically — per-repo, per-workflow, per-OS. Flaky reruns and wasteful builds get flagged so you can save money.", icon: "💰", color: "#f59e0b" },
+            { step: "03", title: "After: Incident Replay", desc: "When a deploy fails, an incident timeline is auto-generated with commits, PRs, and error context. Export to Markdown for blameless postmortems.", icon: "🔥", color: "#ef4444" },
           ].map((item, i) => (
             <div key={i} style={{ background: "#020812", padding: "36px 32px", display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -155,6 +160,7 @@ export default function Home() {
                 <span style={{ fontSize: 24 }}>{item.icon}</span>
               </div>
               <h3 style={{ fontSize: 20, fontWeight: 700 }}>{item.title}</h3>
+              <div style={{ width: 40, height: 3, borderRadius: 2, background: item.color }} />
               <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.65 }}>{item.desc}</p>
             </div>
           ))}
@@ -164,13 +170,16 @@ export default function Home() {
       {/* Features */}
       <section id="features" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 48px 96px" }}>
         <div style={{ textAlign: "center", marginBottom: 56 }}>
-          <div style={{ fontFamily: "monospace", fontSize: 11, color: "#64d8a3", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12 }}>Features</div>
+          <div style={{ fontFamily: "monospace", fontSize: 11, color: "#3b82f6", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12 }}>Features</div>
           <h2 style={{ fontSize: 38, fontWeight: 900, letterSpacing: "-1px" }}>Everything your team needs</h2>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
           {FEATURES.map((f, i) => (
             <div key={i} style={{ padding: "28px 24px", borderRadius: 12, border: "1px solid #0f172a", background: "#020812", display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ fontSize: 24 }}>{f.icon}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ fontSize: 24 }}>{f.icon}</div>
+                <span style={{ fontSize: 10, fontFamily: "monospace", color: f.color, padding: "2px 8px", borderRadius: 4, background: f.color + "15", border: "1px solid " + f.color + "30", textTransform: "uppercase", letterSpacing: "0.05em" }}>{f.tag}</span>
+              </div>
               <h3 style={{ fontSize: 16, fontWeight: 700 }}>{f.title}</h3>
               <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>{f.desc}</p>
             </div>
@@ -178,25 +187,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Code */}
+      {/* GitHub App Code */}
       <section style={{ maxWidth: 1100, margin: "0 auto", padding: "0 48px 96px" }}>
         <div style={{ borderRadius: 12, border: "1px solid #0f172a", overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 20px", background: "#0d1829", borderBottom: "1px solid #1e293b" }}>
             <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ff6b6b" }} />
             <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#fbbf24" }} />
             <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#64d8a3" }} />
-            <span style={{ marginLeft: 12, fontFamily: "monospace", fontSize: 11, color: "#475569" }}>.github/workflows/deploy.yml</span>
+            <span style={{ marginLeft: 12, fontFamily: "monospace", fontSize: 11, color: "#475569" }}>Setup — 3 steps, 5 minutes</span>
           </div>
           <div style={{ background: "#020c1a", padding: "28px 32px" }}>
-            <pre style={{ fontFamily: "monospace", fontSize: 13, lineHeight: 2, color: "#94a3b8", overflowX: "auto" }}>{`# Add one step to any GitHub Actions workflow
-- name: PipelineIQ
-  if: always()
-  uses: Raja-Karuppasamy/pipelineiq-action@v1
-  with:
-    api-key: \${{ secrets.PIPELINEIQ_API_KEY }}
-   job-status: \${{ job.status }}
+            <pre style={{ fontFamily: "monospace", fontSize: 13, lineHeight: 2, color: "#94a3b8", overflowX: "auto" }}>{`# 1. Install PipelineIQ Pro GitHub App
+#    → github.com/apps/pipelineiq-pro
 
-# That's it. AI diagnosis lands in Slack on every failure.`}</pre>
+# 2. Select your repos
+#    → Done. Webhooks are automatic.
+
+# 3. Open your dashboard
+#    → pipelineiq.dev/overview
+#    → Risk scores appear on first push.
+
+# That's it. No config files. No CI changes.`}</pre>
           </div>
         </div>
       </section>
@@ -204,15 +215,15 @@ export default function Home() {
       {/* Pricing */}
       <section id="pricing" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 48px 96px" }}>
         <div style={{ textAlign: "center", marginBottom: 56 }}>
-          <div style={{ fontFamily: "monospace", fontSize: 11, color: "#64d8a3", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12 }}>Pricing</div>
-          <h2 style={{ fontSize: 38, fontWeight: 900, letterSpacing: "-1px" }}>Simple, transparent pricing</h2>
-          <p style={{ color: "#64748b", marginTop: 12, fontSize: 15 }}>Start free. Upgrade when ready.</p>
+          <div style={{ fontFamily: "monospace", fontSize: 11, color: "#3b82f6", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12 }}>Pricing</div>
+          <h2 style={{ fontSize: 38, fontWeight: 900, letterSpacing: "-1px" }}>Start free. Scale with your team.</h2>
+          <p style={{ color: "#64748b", marginTop: 12, fontSize: 15 }}>No credit card required. 14-day free trial on paid plans.</p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
           {PRICING.map((plan, i) => (
-            <div key={i} style={{ borderRadius: 12, padding: "36px 32px", border: `1px solid ${plan.highlight ? "#64d8a3" : "#0f172a"}`, background: "#020812", display: "flex", flexDirection: "column", gap: 24, position: "relative" }}>
+            <div key={i} style={{ borderRadius: 12, padding: "36px 32px", border: `1px solid ${plan.highlight ? "#3b82f6" : "#0f172a"}`, background: "#020812", display: "flex", flexDirection: "column", gap: 24, position: "relative" }}>
               {plan.highlight && (
-                <div style={{ position: "absolute", top: -13, left: "50%", transform: "translateX(-50%)", padding: "4px 14px", background: "#64d8a3", color: "#020812", fontSize: 11, fontFamily: "monospace", fontWeight: 700, borderRadius: 999, whiteSpace: "nowrap" }}>
+                <div style={{ position: "absolute", top: -13, left: "50%", transform: "translateX(-50%)", padding: "4px 14px", background: "#3b82f6", color: "#fff", fontSize: 11, fontFamily: "monospace", fontWeight: 700, borderRadius: 999, whiteSpace: "nowrap" }}>
                   MOST POPULAR
                 </div>
               )}
@@ -226,19 +237,18 @@ export default function Home() {
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
                 {plan.features.map((f, j) => (
                   <li key={j} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#94a3b8" }}>
-                    <span style={{ color: "#64d8a3", fontSize: 11 }}>✓</span>{f}
+                    <span style={{ color: "#3b82f6", fontSize: 11 }}>✓</span>{f}
                   </li>
                 ))}
               </ul>
-              {plan.highlight ? (
-  <a href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({top: 0, behavior: 'smooth'}); (document.querySelector('input[type="email"]') as HTMLInputElement)?.focus(); }} style={{ width: "100%", padding: "14px", borderRadius: 8, border: "none", background: "#64d8a3", color: "#020812", fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: "pointer", textAlign: "center", display: "block" }}>
-    {plan.cta}
-  </a>
-) : (
-  <button style={{ width: "100%", padding: "14px", borderRadius: 8, border: "1px solid #1e293b", background: "#0f172a", color: "#fff", fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-    {plan.cta}
-  </button>
-)}
+              <a href="/signup" style={{
+                width: "100%", padding: "14px", borderRadius: 8, textAlign: "center", display: "block",
+                background: plan.highlight ? "#3b82f6" : "#0f172a",
+                border: plan.highlight ? "none" : "1px solid #1e293b",
+                color: "#fff", fontFamily: "monospace", fontWeight: 700, fontSize: 13,
+              }}>
+                {plan.cta}
+              </a>
             </div>
           ))}
         </div>
@@ -248,18 +258,16 @@ export default function Home() {
       <section style={{ maxWidth: 1100, margin: "0 auto", padding: "0 48px 96px" }}>
         <div style={{ borderRadius: 16, border: "1px solid #0f172a", background: "#0a1628", padding: "80px 48px", textAlign: "center", display: "flex", flexDirection: "column", gap: 24, alignItems: "center" }}>
           <h2 style={{ fontSize: 42, fontWeight: 900, letterSpacing: "-1.5px", lineHeight: 1.15 }}>
-            Stop debugging pipelines.<br />
-            <span style={{ color: "#64d8a3" }}>Start shipping.</span>
+            Stop flying blind.<br />
+            <span style={{ color: "#3b82f6" }}>Start shipping safely.</span>
           </h2>
-          <p style={{ color: "#64748b", maxWidth: 400, fontSize: 15, lineHeight: 1.7 }}>Join engineering teams saving hours every week on pipeline failures.</p>
+          <p style={{ color: "#64748b", maxWidth: 440, fontSize: 15, lineHeight: 1.7 }}>Connect your GitHub in 5 minutes. See your first risk score on the next push.</p>
           <div style={{ display: "flex", gap: 16 }}>
-            <a href="https://pipelineiq-production-3496.up.railway.app/docs" target="_blank"
-              style={{ padding: "14px 32px", background: "#64d8a3", color: "#020812", borderRadius: 8, fontFamily: "monospace", fontWeight: 700, fontSize: 14 }}>
-              Read the Docs →
+            <a href="/signup" style={{ padding: "14px 32px", background: "#3b82f6", color: "#fff", borderRadius: 8, fontFamily: "monospace", fontWeight: 700, fontSize: 14 }}>
+              Get Started Free →
             </a>
-            <a href="mailto:raja@pipelineiq.dev"
-              style={{ padding: "14px 32px", border: "1px solid #1e293b", color: "#fff", borderRadius: 8, fontFamily: "monospace", fontSize: 14 }}>
-              Talk to founder
+            <a href="/overview" style={{ padding: "14px 32px", border: "1px solid #1e293b", color: "#fff", borderRadius: 8, fontFamily: "monospace", fontSize: 14 }}>
+              View Dashboard
             </a>
           </div>
         </div>
@@ -269,11 +277,16 @@ export default function Home() {
       <footer style={{ borderTop: "1px solid #0f172a", padding: "32px 48px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            
-            <span style={{ fontFamily: "monospace", fontSize: 13, color: "#475569" }}>PipelineIQ © 2026</span>
+            <span style={{ fontFamily: "monospace", fontSize: 13, color: "#475569" }}>
+              PipelineIQ<span style={{ color: "#3b82f6" }}>Pro</span> © 2026 · A <a href="https://clearfix.co" style={{ color: "#475569" }}>ClearFix.co</a> product
+            </span>
           </div>
           <div style={{ display: "flex", gap: 24 }}>
-            {[{ label: "API Docs", href: "https://pipelineiq-production-3496.up.railway.app/docs" }, { label: "Contact", href: "mailto:raja@pipelineiq.dev" }, { label: "GitHub", href: "https://github.com/Raja-Karuppasamy/pipelineiq" }].map((l, i) => (
+            {[
+              { label: "GitHub", href: "https://github.com/apps/pipelineiq-pro" },
+              { label: "Twitter", href: "https://x.com/pipelineiq" },
+              { label: "Contact", href: "mailto:raja@pipelineiq.dev" },
+            ].map((l, i) => (
               <a key={i} href={l.href} target="_blank" style={{ fontFamily: "monospace", fontSize: 12, color: "#334155" }}>{l.label}</a>
             ))}
           </div>
