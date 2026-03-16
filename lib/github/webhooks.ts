@@ -2,6 +2,7 @@ import { scoreDeployRisk } from "@/lib/risk/scorer";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import { trackWorkflowCost } from "../costs/calculator";
+import { sendSlackAlert, buildRiskAlertMessage, buildIncidentAlertMessage } from "../notifications/slack";
 
 function getSupabase() {
   return createClient(
@@ -171,6 +172,50 @@ export async function handleWorkflowRunEvent(payload: any) {
     }
   }
 
+  // Send Slack alerts
+  if (pipelineRun) {
+    try {
+      const { data: alertConfigs } = await getSupabase()
+        .from("alert_configs")
+        .select("*")
+        .eq("org_id", orgId)
+        .eq("is_active", true)
+        .eq("channel", "slack");
+
+      if (alertConfigs && alertConfigs.length > 0) {
+        for (const config of alertConfigs) {
+          if (!config.webhook_url) continue;
+
+          // High risk alert
+          if (riskScore && riskScore >= (config.risk_threshold || 80)) {
+            await sendSlackAlert(config.webhook_url, buildRiskAlertMessage({
+              repoName: repository.full_name,
+              score: riskScore,
+              riskLevel: riskScore > 70 ? "danger" : "warning",
+              commitMessage: run.head_commit?.message?.split("\n")[0] || "No message",
+              triggeredBy: run.actor?.login || "unknown",
+              branch: run.head_branch || "main",
+              htmlUrl: run.html_url,
+            }));
+          }
+
+          // Incident alert
+          if (config.incident_alerts && run.conclusion === "failure") {
+            await sendSlackAlert(config.webhook_url, buildIncidentAlertMessage({
+              repoName: repository.full_name,
+              title: `${repository.name} — ${run.name} failed`,
+              errorSummary: run.head_commit?.message?.split("\n")[0] || "Deploy failed",
+              triggeredBy: run.actor?.login || "unknown",
+              branch: run.head_branch || "main",
+              commitMessage: run.head_commit?.message?.split("\n")[0] || "No message",
+            }));
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Slack alerts failed:", err);
+    }
+  }
   return { success: true, pipeline_run_id: pipelineRun?.id, riskScore, riskError, costResult };
 
 }
