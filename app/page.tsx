@@ -59,9 +59,9 @@ const FEATURES = [
 ];
 
 const PRICING = [
-  { name: "Free", price: "$0", period: "forever", features: ["2 repositories", "50 runs/month", "Basic insights", "Email alerts"], cta: "Start Free", highlight: false },
-  { name: "Starter", price: "$49", period: "/ month", features: ["10 repositories", "Unlimited runs", "AI diagnosis", "Slack alerts", "Drift detection"], cta: "Start Free Trial", highlight: true },
-  { name: "Team", price: "$199", period: "/ month", features: ["Unlimited repos", "AI diagnosis", "Slack + webhooks", "Drift detection", "Priority support"], cta: "Start Free Trial", highlight: false },
+  { name: "Free", price: "$0", period: "forever", features: ["1 repository", "Basic risk scores", "7-day cost view", "Community support"], cta: "Start Free", highlight: false },
+  { name: "Team", price: "$49", period: "/ month", features: ["Up to 10 repos", "Deploy Guard + Slack alerts", "90-day cost tracking + reports", "Incident Replay (last 10)", "Up to 10 team members", "Email support (48hr)"], cta: "Start 14-Day Trial", highlight: true },
+  { name: "Growth", price: "$199", period: "/ month", features: ["Unlimited repos", "Custom risk rules", "Unlimited cost history + export", "Unlimited incidents + export", "Unlimited team members", "Priority support (24hr)"], cta: "Start 14-Day Trial", highlight: false },
 ];
 
 export default function Home() {
