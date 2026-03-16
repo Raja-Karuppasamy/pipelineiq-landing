@@ -69,21 +69,10 @@ export default function AlertsPage() {
     setTestResult(null);
 
     try {
-      const res = await fetch(webhookUrl, {
+      const res = await fetch("/api/alerts/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          blocks: [
-            {
-              type: "header",
-              text: { type: "plain_text", text: "🧪 PipelineIQ Pro — Test Alert" },
-            },
-            {
-              type: "section",
-              text: { type: "mrkdwn", text: "If you see this, Slack alerts are working! 🎉\n\nYou'll receive alerts for high-risk deploys and failed workflows." },
-            },
-          ],
-        }),
+        body: JSON.stringify({ webhookUrl }),
       });
 
       if (res.ok) {
@@ -96,7 +85,6 @@ export default function AlertsPage() {
     }
     setTesting(false);
   }
-
   if (loading) {
     return React.createElement("div", { style: { textAlign: "center", padding: "60px", color: "rgba(255,255,255,0.3)" } }, "Loading...");
   }
