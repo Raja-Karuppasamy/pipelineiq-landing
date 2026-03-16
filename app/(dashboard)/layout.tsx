@@ -150,6 +150,21 @@ export default function DashboardLayout({
         }}>
           <div />
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <button
+              onClick={async () => {
+                const { createClient } = await import("@/lib/supabase/client");
+                const supabase = createClient();
+                await supabase.auth.signOut();
+                window.location.href = "/";
+              }}
+              style={{
+                padding: "6px 12px", borderRadius: "6px", fontSize: "12px",
+                background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+                color: "rgba(255,255,255,0.4)", cursor: "pointer", fontFamily: "monospace",
+              }}
+            >
+              Logout
+            </button>
             <div style={{
               width: "28px", height: "28px", borderRadius: "9999px",
               background: "linear-gradient(135deg, #34d399, #3b82f6)",
