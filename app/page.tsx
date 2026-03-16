@@ -113,6 +113,13 @@ export default function Home() {
               <a href="/signup" style={{ padding: "12px 24px", background: "#64d8a3", color: "#020812", border: "none", borderRadius: 8, fontFamily: "monospace", fontWeight: 700, fontSize: 14, cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" as const }}>
                 Start Free — Get API Key →
               </a>
+              <a href="/overview" style={{
+  padding: "10px 24px", borderRadius: "8px",
+  background: "rgba(255,255,255,0.1)", color: "white",
+  fontSize: "14px", fontWeight: 500, textDecoration: "none",
+}}>
+  Dashboard →
+</a>
               <span style={{ fontFamily: "monospace", fontSize: 12, color: "#475569" }}>No credit card required</span>
             </div>
             <div style={{ display: "flex", gap: 24, fontSize: 12, color: "#334155", fontFamily: "monospace" }}>
