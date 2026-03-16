@@ -110,18 +110,12 @@ export default function Home() {
               AI-powered DevOps intelligence. When a pipeline fails, your team gets the diagnosis and fix in Slack — within seconds.
             </p>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <a href="/signup" style={{ padding: "12px 24px", background: "#64d8a3", color: "#020812", border: "none", borderRadius: 8, fontFamily: "monospace", fontWeight: 700, fontSize: 14, cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" as const }}>
+              <a href="/signup" style={{ padding: "12px 24px", background: "#64d8a3", color: "#020812", border: "none", borderRadius: 8, fontFamily: "monospace", fontWeight: 700, fontSize: 14, cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" }}>
                 Start Free — Get API Key →
               </a>
-              <a href="/overview" style={{
-  padding: "14px 28px", borderRadius: "8px",
-  background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)",
-  color: "white", fontSize: "14px", fontWeight: 500, textDecoration: "none",
-  display: "inline-flex", alignItems: "center", gap: "6px",
-}}>
-  Dashboard →
-</a>
-              <span style={{ fontFamily: "monospace", fontSize: 12, color: "#475569" }}>No credit card required</span>
+              <a href="/overview" style={{ padding: "12px 24px", borderRadius: 8, background: "transparent", border: "1px solid #1e293b", color: "#fff", fontFamily: "monospace", fontWeight: 700, fontSize: 14, textDecoration: "none", whiteSpace: "nowrap" }}>
+                Dashboard →
+              </a>
             </div>
             <div style={{ display: "flex", gap: 24, fontSize: 12, color: "#334155", fontFamily: "monospace" }}>
               <span>✓ No credit card</span><span>✓ 2-min setup</span><span>✓ GitHub Actions</span>
