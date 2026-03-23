@@ -83,7 +83,7 @@ export default function DashboardLayout({
         <div style={{ padding: "16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <a href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
             <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: "14px", color: "white" }}>
-              PipelineIQ<span style={{ color: "#3b82f6" }}>Pro</span>
+              Deploy<span style={{ color: "#3b82f6" }}>Guard</span>
             </span>
           </a>
         </div>

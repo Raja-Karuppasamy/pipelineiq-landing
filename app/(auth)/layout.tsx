@@ -14,7 +14,7 @@ export default function AuthLayout({
               P
             </div>
             <span className="font-mono font-bold text-lg text-white">
-              PipelineIQ<span className="text-blue-500">Pro</span>
+              Deploy<span className="text-blue-500">Guard</span>
             </span>
           </a>
         </div>

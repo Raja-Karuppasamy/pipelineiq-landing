@@ -5,13 +5,13 @@ const TERMINAL_LINES = [
   { delay: 0, text: "$ git push origin main", type: "cmd" },
   { delay: 700, text: "✓ CI workflow triggered...", type: "info" },
   { delay: 1400, text: "✓ Build passed — 24s", type: "info" },
-  { delay: 2000, text: "⚡ PipelineIQ scoring deploy...", type: "label" },
+  { delay: 2000, text: "⚡ DeployGuard scoring deploy...", type: "label" },
   { delay: 2600, text: "   Lines changed: 342  (+15 pts)", type: "diag" },
   { delay: 2900, text: "   Files touched: 18   (+10 pts)", type: "diag" },
   { delay: 3200, text: "   Tests: all pass      (+0 pts)", type: "diag" },
   { delay: 3500, text: "   Friday 4:47pm        (+20 pts)", type: "error" },
   { delay: 4000, text: "⚠ Risk Score: 67/100 — WARNING", type: "error" },
-  { delay: 4500, text: "📣 Slack alert sent to #pipeline-alerts", type: "fix" },
+  { delay: 4500, text: "📣 Slack alert sent to #deploy-alerts", type: "fix" },
   { delay: 5000, text: "💰 Cost: $0.19 (Linux, 24 min)", type: "save" },
 ];
 
@@ -35,7 +35,7 @@ function Terminal() {
         <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#ff6b6b" }} />
         <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#fbbf24" }} />
         <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#64d8a3" }} />
-        <span style={{ marginLeft: 12, fontFamily: "monospace", fontSize: 12, color: "#475569" }}>pipelineiq — terminal</span>
+        <span style={{ marginLeft: 12, fontFamily: "monospace", fontSize: 12, color: "#475569" }}>deployguard — terminal</span>
       </div>
       <div style={{ background: "#020c1a", padding: "24px", minHeight: 280 }}>
         {TERMINAL_LINES.slice(0, visibleLines).map((line, i) => (
@@ -79,7 +79,7 @@ export default function Home() {
       {/* Nav */}
       <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 48px", borderBottom: "1px solid #0f172a", position: "sticky", top: 0, background: "rgba(2,8,18,0.95)", backdropFilter: "blur(12px)", zIndex: 100 }}>
         <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 18 }}>
-          PipelineIQ<span style={{ color: "#3b82f6" }}>Pro</span>
+          Deploy<span style={{ color: "#3b82f6" }}>Guard</span>
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
           <a href="#features" style={{ color: "#64748b", fontSize: 14 }}>Features</a>
@@ -197,14 +197,14 @@ export default function Home() {
             <span style={{ marginLeft: 12, fontFamily: "monospace", fontSize: 11, color: "#475569" }}>Setup — 3 steps, 5 minutes</span>
           </div>
           <div style={{ background: "#020c1a", padding: "28px 32px" }}>
-            <pre style={{ fontFamily: "monospace", fontSize: 13, lineHeight: 2, color: "#94a3b8", overflowX: "auto" }}>{`# 1. Install PipelineIQ Pro GitHub App
-#    → github.com/apps/pipelineiq-pro
+            <pre style={{ fontFamily: "monospace", fontSize: 13, lineHeight: 2, color: "#94a3b8", overflowX: "auto" }}>{`# 1. Install DeployGuard GitHub App
+#    → github.com/apps/deployguard
 
 # 2. Select your repos
 #    → Done. Webhooks are automatic.
 
 # 3. Open your dashboard
-#    → pipelineiq.dev/overview
+#    → deployguard.dev/overview
 #    → Risk scores appear on first push.
 
 # That's it. No config files. No CI changes.`}</pre>
@@ -278,14 +278,14 @@ export default function Home() {
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontFamily: "monospace", fontSize: 13, color: "#475569" }}>
-              PipelineIQ<span style={{ color: "#3b82f6" }}>Pro</span> © 2026 · A <a href="https://clearfix.co" style={{ color: "#475569" }}>ClearFix.co</a> product
+              Deploy<span style={{ color: "#3b82f6" }}>Guard</span> © 2026 · A <a href="https://clearfix.co" style={{ color: "#475569" }}>ClearFix.co</a> product
             </span>
           </div>
           <div style={{ display: "flex", gap: 24 }}>
             {[
-              { label: "GitHub", href: "https://github.com/apps/pipelineiq-pro" },
-              { label: "Twitter", href: "https://x.com/pipelineiq" },
-              { label: "Contact", href: "mailto:raja@pipelineiq.dev" },
+              { label: "GitHub", href: "https://github.com/apps/deployguard" },
+              { label: "Twitter", href: "https://x.com/deployguard" },
+              { label: "Contact", href: "mailto:raja@deployguard.dev" },
             ].map((l, i) => (
               <a key={i} href={l.href} target="_blank" style={{ fontFamily: "monospace", fontSize: 12, color: "#334155" }}>{l.label}</a>
             ))}
