@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import { trackWorkflowCost } from "../costs/calculator";
 import { sendSlackAlert, buildRiskAlertMessage, buildIncidentAlertMessage } from "../notifications/slack";
+import { postPRComment, buildFailureComment } from "../github/bot";
 
 function getSupabase() {
   return createClient(
@@ -172,6 +173,36 @@ export async function handleWorkflowRunEvent(payload: any) {
     }
   }
 
+  // Post PR comment
+  if (pipelineRun && run.pull_requests?.length > 0) {
+    try {
+      const prNumber = run.pull_requests[0].number;
+      const [owner, repoName] = repository.full_name.split("/");
+      const installationId = payload.installation?.id;
+
+      if (installationId && prNumber) {
+        const comment = buildFailureComment({
+          repoName: repository.full_name,
+          workflowName: run.name,
+          score: riskScore || 0,
+          riskLevel: riskScore ? (riskScore > 70 ? "danger" : riskScore > 40 ? "warning" : "safe") : "safe",
+          commitSha: run.head_sha,
+          branch: run.head_branch || "main",
+          triggeredBy: run.actor?.login || "unknown",
+          errorSummary: run.conclusion === "failure" ? `Workflow "${run.name}" failed on branch ${run.head_branch}` : undefined,
+          costUsd: costResult?.cost,
+          duration: run.run_started_at
+            ? Math.round((new Date(run.updated_at).getTime() - new Date(run.run_started_at).getTime()) / 1000)
+            : undefined,
+        });
+
+        await postPRComment(installationId, owner, repoName, prNumber, comment);
+        console.log(`Posted PR comment on ${repository.full_name}#${prNumber}`);
+      }
+    } catch (err) {
+      console.error("PR comment failed:", err);
+    }
+  }
   // Send Slack alerts
   if (pipelineRun) {
     try {
