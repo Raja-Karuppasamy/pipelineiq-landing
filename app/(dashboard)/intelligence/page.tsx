@@ -14,11 +14,31 @@ interface RecurringFailure {
   branch: string;
 }
 
-interface Summary {
-  totalPatterns: number;
-  totalRecurringFailures: number;
-  mostAffectedRepo: string | null;
-  timeframeDays: number;
+interface FlakyPipeline {
+  repoFullName: string;
+  workflowName: string;
+  totalRuns: number;
+  flips: number;
+  flakiness: number;
+  failureRate: number;
+  lastStatus: string;
+  branch: string;
+  recentStatuses: string[];
+}
+
+interface WasteSource {
+  type: string;
+  label: string;
+  cost: number;
+  runs: number;
+  description: string;
+}
+
+interface WasteReport {
+  totalCost: number;
+  wasteCost: number;
+  wastePercent: number;
+  sources: WasteSource[];
 }
 
 function getTimeAgo(dateStr: string): string {
@@ -32,127 +52,62 @@ function getTimeAgo(dateStr: string): string {
   return Math.floor(hours / 24) + "d ago";
 }
 
-function FailureRateBar({ rate }: { rate: number }) {
-  const color = rate > 60 ? "#ef4444" : rate > 30 ? "#f59e0b" : "#3b82f6";
-  return React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px" } },
-    React.createElement("div", { style: { flex: 1, height: "6px", borderRadius: "3px", background: "rgba(255,255,255,0.06)" } },
-      React.createElement("div", { style: { width: rate + "%", height: "100%", borderRadius: "3px", background: color, transition: "width 0.5s" } }),
-    ),
-    React.createElement("span", { style: { fontSize: "12px", fontFamily: "monospace", color, fontWeight: 700, minWidth: "36px" } }, rate + "%"),
-  );
+function StatusDot({ status }: { status: string }) {
+  const color = status === "success" ? "#10b981" : "#ef4444";
+  return React.createElement("div", {
+    style: { width: "8px", height: "8px", borderRadius: "50%", background: color, flexShrink: 0 }
+  });
 }
 
-function RecurringCard({ failure }: { failure: RecurringFailure }) {
-  const [expanded, setExpanded] = useState(false);
-  const repoName = failure.repoFullName.split("/").pop() || failure.repoFullName;
-  const severityColor = failure.failureRate > 60 ? "#ef4444" : failure.failureRate > 30 ? "#f59e0b" : "#3b82f6";
-  const severityLabel = failure.failureRate > 60 ? "CRITICAL" : failure.failureRate > 30 ? "WARNING" : "MONITOR";
-
-  return React.createElement("div", {
-    style: {
-      border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px",
-      background: "rgba(255,255,255,0.02)", overflow: "hidden", cursor: "pointer",
-      borderLeft: "3px solid " + severityColor,
-    },
-    onClick: () => setExpanded(!expanded),
-  },
-    // Main row
-    React.createElement("div", { style: { padding: "16px 20px", display: "flex", alignItems: "center", gap: "16px" } },
+function StatusTimeline({ statuses }: { statuses: string[] }) {
+  return React.createElement("div", { style: { display: "flex", gap: "3px", alignItems: "center" } },
+    ...statuses.map((s, i) =>
       React.createElement("div", {
+        key: i,
         style: {
-          width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0,
-          background: severityColor + "15", display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "14px",
-        }
-      }, "🔁"),
-
-      React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" } },
-          React.createElement("span", { style: { color: "white", fontSize: "14px", fontWeight: 600 } }, repoName),
-          React.createElement("span", { style: { color: "rgba(255,255,255,0.3)", fontSize: "12px" } }, failure.workflowName),
-          React.createElement("span", {
-            style: {
-              fontSize: "10px", padding: "2px 8px", borderRadius: "4px",
-              background: severityColor + "20", color: severityColor,
-              fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600,
-            }
-          }, severityLabel),
-        ),
-        React.createElement("p", { style: { color: "rgba(255,255,255,0.4)", fontSize: "12px" } },
-          failure.failureCount + " failures in " + failure.totalRuns + " runs · last " + getTimeAgo(failure.lastFailure)
-        ),
-      ),
-
-      React.createElement("div", { style: { width: "120px", flexShrink: 0 } },
-        React.createElement(FailureRateBar, { rate: failure.failureRate }),
-      ),
+          width: "10px", height: "14px", borderRadius: "2px",
+          background: s === "success" ? "#10b981" : "#ef4444",
+          opacity: 0.6 + (i / statuses.length) * 0.4,
+        },
+      })
     ),
-
-    // Expanded
-    expanded ? React.createElement("div", {
-      style: { padding: "0 20px 16px", borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: "12px" },
-    },
-      React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" } },
-        // Stats
-        React.createElement("div", null,
-          React.createElement("p", { style: { fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" } }, "Pattern Details"),
-          React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px" } },
-            ...[
-              { label: "Total runs", value: String(failure.totalRuns) },
-              { label: "Failures", value: String(failure.failureCount) },
-              { label: "Failure rate", value: failure.failureRate + "%" },
-              { label: "Branch", value: failure.branch },
-              { label: "Authors", value: failure.triggeredBy.join(", ") },
-            ].map((row) =>
-              React.createElement("div", { key: row.label, style: { display: "flex", justifyContent: "space-between" } },
-                React.createElement("span", { style: { color: "rgba(255,255,255,0.4)" } }, row.label),
-                React.createElement("span", { style: { color: "rgba(255,255,255,0.7)", fontFamily: "monospace" } }, row.value),
-              )
-            ),
-          ),
-        ),
-
-        // Common commit messages
-        React.createElement("div", null,
-          React.createElement("p", { style: { fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" } }, "Recent Failing Commits"),
-          failure.commonCommitMessages.length > 0
-            ? React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "6px" } },
-                ...failure.commonCommitMessages.map((msg, i) =>
-                  React.createElement("div", {
-                    key: i,
-                    style: {
-                      padding: "6px 10px", borderRadius: "6px", background: "rgba(0,0,0,0.3)",
-                      fontSize: "11px", color: "#fca5a5", fontFamily: "monospace",
-                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                    },
-                  }, msg)
-                ),
-              )
-            : React.createElement("p", { style: { color: "rgba(255,255,255,0.25)", fontSize: "12px" } }, "No commit messages"),
-        ),
-      ),
-    ) : null,
   );
 }
 
 export default function IntelligencePage() {
   const [recurring, setRecurring] = useState<RecurringFailure[]>([]);
-  const [summary, setSummary] = useState<Summary>({ totalPatterns: 0, totalRecurringFailures: 0, mostAffectedRepo: null, timeframeDays: 7 });
+  const [flaky, setFlaky] = useState<FlakyPipeline[]>([]);
+  const [waste, setWaste] = useState<WasteReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(7);
+  const [expandedRecurring, setExpandedRecurring] = useState<number | null>(null);
+  const [expandedFlaky, setExpandedFlaky] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchData();
+    fetchAll();
   }, [days]);
 
-  async function fetchData() {
+  async function fetchAll() {
     setLoading(true);
-    const res = await fetch(`/api/intelligence/recurring?days=${days}&min=2`);
-    const data = await res.json();
-    setRecurring(data.recurring || []);
-    setSummary(data.summary || { totalPatterns: 0, totalRecurringFailures: 0, mostAffectedRepo: null, timeframeDays: days });
+    const [recRes, flakyRes, wasteRes] = await Promise.all([
+      fetch(`/api/intelligence/recurring?days=${days}&min=2`),
+      fetch(`/api/intelligence/flaky?days=${days}`),
+      fetch(`/api/intelligence/waste?days=${days}`),
+    ]);
+    const recData = await recRes.json();
+    const flakyData = await flakyRes.json();
+    const wasteData = await wasteRes.json();
+    setRecurring(recData.recurring || []);
+    setFlaky(flakyData.flaky || []);
+    setWaste(wasteData);
     setLoading(false);
   }
+
+  if (loading) {
+    return React.createElement("div", { style: { textAlign: "center", padding: "60px", color: "rgba(255,255,255,0.3)" } }, "Analyzing patterns...");
+  }
+
+  const totalIssues = recurring.length + flaky.length;
 
   return React.createElement("div", null,
     // Header
@@ -165,17 +120,18 @@ export default function IntelligencePage() {
             background: "rgba(139,92,246,0.1)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.2)",
             fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.05em",
           }
-        }, "Patterns"),
+        }, "AI Patterns"),
       ),
-      React.createElement("p", { className: "text-gray-500 text-sm" }, "Automatically detected failure patterns across your repos"),
+      React.createElement("p", { className: "text-gray-500 text-sm" }, "Automatically detected failure patterns, flaky pipelines, and CI waste"),
     ),
 
-    // Summary cards
-    React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" } },
+    // Top summary cards
+    React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "24px" } },
       ...[
-        { label: "Recurring Patterns", value: String(summary.totalPatterns), color: summary.totalPatterns > 0 ? "#f59e0b" : "#10b981" },
-        { label: "Total Recurring Failures", value: String(summary.totalRecurringFailures), color: summary.totalRecurringFailures > 0 ? "#ef4444" : "#10b981" },
-        { label: "Most Affected", value: summary.mostAffectedRepo || "None", color: "white" },
+        { label: "Patterns Found", value: String(totalIssues), color: totalIssues > 0 ? "#f59e0b" : "#10b981" },
+        { label: "Recurring Failures", value: String(recurring.length), color: recurring.length > 0 ? "#ef4444" : "#10b981" },
+        { label: "Flaky Pipelines", value: String(flaky.length), color: flaky.length > 0 ? "#f59e0b" : "#10b981" },
+        { label: "CI Waste", value: waste ? "$" + waste.wasteCost.toFixed(2) : "$0.00", color: waste && waste.wasteCost > 0 ? "#ef4444" : "#10b981" },
       ].map((card) =>
         React.createElement("div", {
           key: card.label,
@@ -188,7 +144,7 @@ export default function IntelligencePage() {
     ),
 
     // Timeframe selector
-    React.createElement("div", { style: { display: "flex", gap: "8px", marginBottom: "16px" } },
+    React.createElement("div", { style: { display: "flex", gap: "8px", marginBottom: "24px" } },
       ...[7, 14, 30].map((d) =>
         React.createElement("button", {
           key: d,
@@ -200,25 +156,191 @@ export default function IntelligencePage() {
             color: days === d ? "#a78bfa" : "rgba(255,255,255,0.5)",
             cursor: "pointer",
           },
-        }, d + "d")
+        }, d + " days")
       ),
     ),
 
-    // Results
-    loading
-      ? React.createElement("div", { style: { textAlign: "center", padding: "40px", color: "rgba(255,255,255,0.3)" } }, "Analyzing patterns...")
-      : recurring.length === 0
-        ? React.createElement("div", {
-            style: { textAlign: "center", padding: "60px", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px", background: "rgba(255,255,255,0.02)" },
-          },
-            React.createElement("div", { style: { fontSize: "32px", marginBottom: "12px" } }, "✨"),
-            React.createElement("p", { style: { color: "rgba(255,255,255,0.4)", fontSize: "14px", marginBottom: "4px" } }, "No recurring failure patterns detected"),
-            React.createElement("p", { style: { color: "rgba(255,255,255,0.25)", fontSize: "12px" } }, "When workflows fail repeatedly, patterns will appear here"),
-          )
-        : React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "8px" } },
-            ...recurring.map((failure, i) =>
-              React.createElement(RecurringCard, { key: i, failure })
+    // CI Waste section
+    waste && waste.sources.length > 0 ? React.createElement("div", { style: { marginBottom: "24px" } },
+      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" } },
+        React.createElement("span", { style: { fontSize: "16px" } }, "💸"),
+        React.createElement("h2", { style: { fontSize: "16px", fontWeight: 600, color: "white" } }, "CI Waste Report"),
+        React.createElement("span", { style: { fontSize: "11px", color: "rgba(255,255,255,0.3)", fontFamily: "monospace" } },
+          waste.wastePercent + "% of total spend"
+        ),
+      ),
+      React.createElement("div", {
+        style: { borderRadius: "12px", border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)", padding: "20px" },
+      },
+        // Waste bar
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" } },
+          React.createElement("div", { style: { flex: 1 } },
+            React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: "4px" } },
+              React.createElement("span", { style: { fontSize: "12px", color: "rgba(255,255,255,0.5)" } }, "Total: $" + waste.totalCost.toFixed(2)),
+              React.createElement("span", { style: { fontSize: "12px", color: "#ef4444", fontWeight: 700 } }, "Waste: $" + waste.wasteCost.toFixed(2)),
+            ),
+            React.createElement("div", { style: { height: "8px", borderRadius: "4px", background: "rgba(255,255,255,0.06)" } },
+              React.createElement("div", { style: { width: waste.wastePercent + "%", height: "100%", borderRadius: "4px", background: "linear-gradient(90deg, #ef4444, #f59e0b)", minWidth: waste.wastePercent > 0 ? "4px" : "0" } }),
             ),
           ),
+        ),
+        // Waste sources
+        React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "10px" } },
+          ...waste.sources.map((source, i) =>
+            React.createElement("div", {
+              key: i,
+              style: { display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", borderRadius: "8px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" },
+            },
+              React.createElement("div", {
+                style: { width: "28px", height: "28px", borderRadius: "6px", background: "rgba(239,68,68,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", flexShrink: 0 },
+              }, source.type === "failed_builds" ? "💥" : source.type === "flaky_reruns" ? "🔄" : "🔁"),
+              React.createElement("div", { style: { flex: 1 } },
+                React.createElement("p", { style: { fontSize: "13px", color: "white", fontWeight: 500 } }, source.label),
+                React.createElement("p", { style: { fontSize: "11px", color: "rgba(255,255,255,0.35)" } }, source.description),
+              ),
+              React.createElement("div", { style: { textAlign: "right", flexShrink: 0 } },
+                React.createElement("p", { style: { fontSize: "13px", color: "#ef4444", fontFamily: "monospace", fontWeight: 700 } }, "$" + source.cost.toFixed(3)),
+                React.createElement("p", { style: { fontSize: "10px", color: "rgba(255,255,255,0.3)" } }, source.runs + " runs"),
+              ),
+            )
+          ),
+        ),
+      ),
+    ) : null,
+
+    // Recurring Failures section
+    React.createElement("div", { style: { marginBottom: "24px" } },
+      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" } },
+        React.createElement("span", { style: { fontSize: "16px" } }, "🔁"),
+        React.createElement("h2", { style: { fontSize: "16px", fontWeight: 600, color: "white" } }, "Recurring Failures"),
+        React.createElement("span", { style: { fontSize: "11px", color: "rgba(255,255,255,0.3)", fontFamily: "monospace" } },
+          recurring.length + " patterns"
+        ),
+      ),
+      recurring.length > 0
+        ? React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "8px" } },
+            ...recurring.map((failure, i) => {
+              const repoName = failure.repoFullName.split("/").pop() || failure.repoFullName;
+              const severityColor = failure.failureRate > 60 ? "#ef4444" : failure.failureRate > 30 ? "#f59e0b" : "#3b82f6";
+              const severityLabel = failure.failureRate > 60 ? "CRITICAL" : failure.failureRate > 30 ? "WARNING" : "MONITOR";
+              const expanded = expandedRecurring === i;
+
+              return React.createElement("div", {
+                key: i,
+                style: {
+                  border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px",
+                  background: "rgba(255,255,255,0.02)", overflow: "hidden", cursor: "pointer",
+                  borderLeft: "3px solid " + severityColor,
+                },
+                onClick: () => setExpandedRecurring(expanded ? null : i),
+              },
+                React.createElement("div", { style: { padding: "14px 20px", display: "flex", alignItems: "center", gap: "12px" } },
+                  React.createElement("span", { style: { fontSize: "14px" } }, "🔁"),
+                  React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" } },
+                      React.createElement("span", { style: { color: "white", fontSize: "13px", fontWeight: 600 } }, repoName),
+                      React.createElement("span", { style: { color: "rgba(255,255,255,0.3)", fontSize: "12px" } }, failure.workflowName),
+                      React.createElement("span", {
+                        style: { fontSize: "9px", padding: "1px 6px", borderRadius: "4px", background: severityColor + "20", color: severityColor, fontFamily: "monospace", textTransform: "uppercase", fontWeight: 600 },
+                      }, severityLabel),
+                    ),
+                    React.createElement("p", { style: { color: "rgba(255,255,255,0.35)", fontSize: "11px" } },
+                      failure.failureCount + " failures in " + failure.totalRuns + " runs · " + failure.failureRate + "% failure rate"
+                    ),
+                  ),
+                ),
+                expanded ? React.createElement("div", {
+                  style: { padding: "0 20px 14px", borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: "10px" },
+                },
+                  React.createElement("p", { style: { fontSize: "10px", color: "rgba(255,255,255,0.3)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" } }, "Failing Commits"),
+                  React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "4px" } },
+                    ...failure.commonCommitMessages.map((msg, j) =>
+                      React.createElement("div", {
+                        key: j,
+                        style: { padding: "4px 8px", borderRadius: "4px", background: "rgba(0,0,0,0.3)", fontSize: "11px", color: "#fca5a5", fontFamily: "monospace" },
+                      }, msg)
+                    ),
+                  ),
+                ) : null,
+              );
+            })
+          )
+        : React.createElement("div", {
+            style: { padding: "30px", textAlign: "center", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px", background: "rgba(255,255,255,0.02)" },
+          },
+            React.createElement("p", { style: { color: "rgba(255,255,255,0.3)", fontSize: "12px" } }, "No recurring failure patterns detected"),
+          ),
+    ),
+
+    // Flaky Pipelines section
+    React.createElement("div", { style: { marginBottom: "24px" } },
+      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" } },
+        React.createElement("span", { style: { fontSize: "16px" } }, "🎲"),
+        React.createElement("h2", { style: { fontSize: "16px", fontWeight: 600, color: "white" } }, "Flaky Pipelines"),
+        React.createElement("span", { style: { fontSize: "11px", color: "rgba(255,255,255,0.3)", fontFamily: "monospace" } },
+          flaky.length + " detected"
+        ),
+      ),
+      flaky.length > 0
+        ? React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "8px" } },
+            ...flaky.map((pipeline, i) => {
+              const repoName = pipeline.repoFullName.split("/").pop() || pipeline.repoFullName;
+              const flakyColor = pipeline.flakiness > 60 ? "#ef4444" : pipeline.flakiness > 40 ? "#f59e0b" : "#3b82f6";
+              const expanded = expandedFlaky === i;
+
+              return React.createElement("div", {
+                key: i,
+                style: {
+                  border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px",
+                  background: "rgba(255,255,255,0.02)", overflow: "hidden", cursor: "pointer",
+                  borderLeft: "3px solid " + flakyColor,
+                },
+                onClick: () => setExpandedFlaky(expanded ? null : i),
+              },
+                React.createElement("div", { style: { padding: "14px 20px", display: "flex", alignItems: "center", gap: "12px" } },
+                  React.createElement("span", { style: { fontSize: "14px" } }, "🎲"),
+                  React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" } },
+                      React.createElement("span", { style: { color: "white", fontSize: "13px", fontWeight: 600 } }, repoName),
+                      React.createElement("span", { style: { color: "rgba(255,255,255,0.3)", fontSize: "12px" } }, pipeline.workflowName),
+                      React.createElement("span", {
+                        style: { fontSize: "9px", padding: "1px 6px", borderRadius: "4px", background: flakyColor + "20", color: flakyColor, fontFamily: "monospace", fontWeight: 700 },
+                      }, pipeline.flakiness + "% flaky"),
+                    ),
+                    React.createElement("p", { style: { color: "rgba(255,255,255,0.35)", fontSize: "11px" } },
+                      pipeline.flips + " status flips in " + pipeline.totalRuns + " runs"
+                    ),
+                  ),
+                  React.createElement("div", { style: { flexShrink: 0 } },
+                    React.createElement(StatusTimeline, { statuses: pipeline.recentStatuses }),
+                  ),
+                ),
+                expanded ? React.createElement("div", {
+                  style: { padding: "0 20px 14px", borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: "10px" },
+                },
+                  React.createElement("div", { style: { display: "flex", gap: "24px", fontSize: "12px" } },
+                    ...[
+                      { label: "Total runs", value: String(pipeline.totalRuns) },
+                      { label: "Flips", value: String(pipeline.flips) },
+                      { label: "Failure rate", value: pipeline.failureRate + "%" },
+                      { label: "Branch", value: pipeline.branch },
+                      { label: "Last status", value: pipeline.lastStatus },
+                    ].map((item) =>
+                      React.createElement("div", { key: item.label },
+                        React.createElement("p", { style: { color: "rgba(255,255,255,0.3)", fontSize: "10px", textTransform: "uppercase", marginBottom: "2px" } }, item.label),
+                        React.createElement("p", { style: { color: "rgba(255,255,255,0.7)", fontFamily: "monospace" } }, item.value),
+                      )
+                    ),
+                  ),
+                ) : null,
+              );
+            })
+          )
+        : React.createElement("div", {
+            style: { padding: "30px", textAlign: "center", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px", background: "rgba(255,255,255,0.02)" },
+          },
+            React.createElement("p", { style: { color: "rgba(255,255,255,0.3)", fontSize: "12px" } }, "No flaky pipelines detected — your CI is stable!"),
+          ),
+    ),
   );
 }
