@@ -210,8 +210,7 @@ export async function handleWorkflowRunEvent(payload: any) {
         const prs = await prRes.json();
 
         if (Array.isArray(prs) && prs.length > 0) {
-          const prNumber = prs.number;
-
+          const prNumber = prs[0].number;
           // FIX 5: Only post failure comment on actual failures
           if (run.conclusion === "failure") {
             const comment = buildFailureComment({
