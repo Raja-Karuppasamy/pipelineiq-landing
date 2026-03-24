@@ -86,7 +86,7 @@ export async function handleWorkflowRunEvent(payload: any) {
       runner_os: null,
       html_url: run.html_url,
       head_branch: run.head_branch,
-      pr_number: run.pull_requests?.?.number || null,
+      pr_number: run.pull_requests?.[0]?.number || null,
       metadata: {
         event: run.event,
         run_number: run.run_number,
