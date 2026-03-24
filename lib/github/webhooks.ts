@@ -174,30 +174,71 @@ export async function handleWorkflowRunEvent(payload: any) {
   }
 
   // Post PR comment
-  if (pipelineRun && run.pull_requests?.length > 0) {
+  if (pipelineRun) {
     try {
-      const prNumber = run.pull_requests[0].number;
-      const [owner, repoName] = repository.full_name.split("/");
       const installationId = payload.installation?.id;
+      const [owner, repoName] = repository.full_name.split("/");
 
-      if (installationId && prNumber) {
-        const comment = buildFailureComment({
-          repoName: repository.full_name,
-          workflowName: run.name,
-          score: riskScore || 0,
-          riskLevel: riskScore ? (riskScore > 70 ? "danger" : riskScore > 40 ? "warning" : "safe") : "safe",
-          commitSha: run.head_sha,
-          branch: run.head_branch || "main",
-          triggeredBy: run.actor?.login || "unknown",
-          errorSummary: run.conclusion === "failure" ? `Workflow "${run.name}" failed on branch ${run.head_branch}` : undefined,
-          costUsd: costResult?.cost,
-          duration: run.run_started_at
-            ? Math.round((new Date(run.updated_at).getTime() - new Date(run.run_started_at).getTime()) / 1000)
-            : undefined,
-        });
+      if (installationId) {
+        // Look up PRs associated with this commit
+        const { postPRComment, buildFailureComment } = await import("../github/bot");
+        
+        // Use GitHub API to find PRs for this commit
+        const jwt = await import("jsonwebtoken");
+        const privateKey = process.env.GITHUB_APP_PRIVATE_KEY!.replace(/\\n/g, "\n");
+        const now = Math.floor(Date.now() / 1000);
+        const jwtToken = jwt.default.sign(
+          { iat: now - 60, exp: now + 600, iss: process.env.GITHUB_APP_ID! },
+          privateKey,
+          { algorithm: "RS256" }
+        );
 
-        await postPRComment(installationId, owner, repoName, prNumber, comment);
-        console.log(`Posted PR comment on ${repository.full_name}#${prNumber}`);
+        // Get installation token
+        const tokenRes = await fetch(
+          `https://api.github.com/app/installations/${installationId}/access_tokens`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${jwtToken}`,
+              Accept: "application/vnd.github+json",
+            },
+          }
+        );
+        const tokenData = await tokenRes.json();
+
+        // Find PRs for this commit
+        const prRes = await fetch(
+          `https://api.github.com/repos/${repository.full_name}/commits/${run.head_sha}/pulls`,
+          {
+            headers: {
+              Authorization: `token ${tokenData.token}`,
+              Accept: "application/vnd.github+json",
+            },
+          }
+        );
+        const prs = await prRes.json();
+
+        if (Array.isArray(prs) && prs.length > 0) {
+          const prNumber = prs[0].number;
+
+          const comment = buildFailureComment({
+            repoName: repository.full_name,
+            workflowName: run.name,
+            score: riskScore || 0,
+            riskLevel: riskScore ? (riskScore > 70 ? "danger" : riskScore > 40 ? "warning" : "safe") : "safe",
+            commitSha: run.head_sha,
+            branch: run.head_branch || "main",
+            triggeredBy: run.actor?.login || "unknown",
+            errorSummary: run.conclusion === "failure" ? `Workflow "${run.name}" failed on branch ${run.head_branch}` : undefined,
+            costUsd: costResult?.cost,
+            duration: run.run_started_at
+              ? Math.round((new Date(run.updated_at).getTime() - new Date(run.run_started_at).getTime()) / 1000)
+              : undefined,
+          });
+
+          await postPRComment(installationId, owner, repoName, prNumber, comment);
+          console.log(`Posted PR comment on ${repository.full_name}#${prNumber}`);
+        }
       }
     } catch (err) {
       console.error("PR comment failed:", err);
