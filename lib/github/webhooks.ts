@@ -30,12 +30,10 @@ export function verifyWebhookSignature(
 export async function handleWorkflowRunEvent(payload: any) {
   const { action, workflow_run, repository, installation } = payload;
 
-  // Only process completed runs
   if (action !== "completed") return { skipped: true, reason: "not completed" };
 
   const run = workflow_run;
 
-  // Find the org by matching the repo
   const { data: trackedRepo } = await getSupabase()
     .from("tracked_repos")
     .select("org_id")
@@ -43,11 +41,9 @@ export async function handleWorkflowRunEvent(payload: any) {
     .eq("is_active", true)
     .single();
 
-  // If repo isn't tracked, try to find org from installation
   let orgId = trackedRepo?.org_id;
 
   if (!orgId) {
-    // Auto-track: find any org and create a tracked repo entry
     const { data: org } = await getSupabase()
       .from("organizations")
       .select("id")
@@ -58,7 +54,6 @@ export async function handleWorkflowRunEvent(payload: any) {
 
     orgId = org.id;
 
-    // Auto-add to tracked repos
     await getSupabase().from("tracked_repos").insert({
       org_id: orgId,
       repo_full_name: repository.full_name,
@@ -67,7 +62,6 @@ export async function handleWorkflowRunEvent(payload: any) {
     });
   }
 
-  // Insert pipeline run
   const { data: pipelineRun, error } = await getSupabase()
     .from("pipeline_runs")
     .insert({
@@ -78,7 +72,7 @@ export async function handleWorkflowRunEvent(payload: any) {
       commit_sha: run.head_sha,
       commit_message: run.head_commit?.message || null,
       workflow_name: run.name,
-      status: run.conclusion || run.status, // success, failure, cancelled, etc.
+      status: run.conclusion || run.status,
       duration_seconds: run.run_started_at
         ? Math.round(
             (new Date(run.updated_at).getTime() -
@@ -89,10 +83,10 @@ export async function handleWorkflowRunEvent(payload: any) {
       started_at: run.run_started_at,
       finished_at: run.updated_at,
       triggered_by: run.actor?.login || null,
-      runner_os: null, // Not available at workflow level
+      runner_os: null,
       html_url: run.html_url,
       head_branch: run.head_branch,
-      pr_number: run.pull_requests?.[0]?.number || null,
+      pr_number: run.pull_requests?.?.number || null,
       metadata: {
         event: run.event,
         run_number: run.run_number,
@@ -108,12 +102,10 @@ export async function handleWorkflowRunEvent(payload: any) {
     return { error: error.message };
   }
 
-  // If the run failed, auto-create an incident
   if (run.conclusion === "failure" && pipelineRun) {
-    const errorSummary =
-      run.head_commit?.message
-        ? `Deploy failed after: ${run.head_commit.message.split("\n")[0]}`
-        : `Workflow "${run.name}" failed`;
+    const errorSummary = run.head_commit?.message
+      ? `Deploy failed after: ${run.head_commit.message.split("\n")[0]}`
+      : `Workflow "${run.name}" failed`;
 
     await getSupabase().from("incidents").insert({
       org_id: orgId,
@@ -130,15 +122,18 @@ export async function handleWorkflowRunEvent(payload: any) {
     });
   }
 
-  // Score the deploy risk
-  // Score the deploy risk
   let riskError = null;
   let riskScore = null;
   if (pipelineRun) {
     try {
       const riskResult = await scoreDeployRisk(pipelineRun.id, orgId, {
         triggeredBy: run.actor?.login || undefined,
-        testsPassed: run.conclusion === "success" ? true : run.conclusion === "failure" ? false : null,
+        testsPassed:
+          run.conclusion === "success"
+            ? true
+            : run.conclusion === "failure"
+            ? false
+            : null,
         deployHour: new Date(run.run_started_at || run.updated_at).getUTCHours(),
         deployDayOfWeek: new Date(run.run_started_at || run.updated_at).getUTCDay(),
       });
@@ -149,7 +144,6 @@ export async function handleWorkflowRunEvent(payload: any) {
     }
   }
 
-  // Track workflow cost
   let costResult = null;
   if (pipelineRun) {
     try {
@@ -165,7 +159,7 @@ export async function handleWorkflowRunEvent(payload: any) {
                 1000
             )
           : 0,
-        null, // runner_os not available at workflow level
+        null,
         run.run_started_at
       );
     } catch (err: any) {
@@ -173,17 +167,16 @@ export async function handleWorkflowRunEvent(payload: any) {
     }
   }
 
-  // Post PR comment
+  // FIX 1: Declare prCommentResult BEFORE the block that uses it
+  let prCommentResult: any = null;
+
   if (pipelineRun) {
     try {
       const installationId = payload.installation?.id;
       const [owner, repoName] = repository.full_name.split("/");
 
       if (installationId) {
-        // Look up PRs associated with this commit
-        const { postPRComment, buildFailureComment } = await import("../github/bot");
-        
-        // Use GitHub API to find PRs for this commit
+        // FIX 3: Removed duplicate dynamic import — using top-level imports directly
         const jwt = await import("jsonwebtoken");
         const privateKey = process.env.GITHUB_APP_PRIVATE_KEY!.replace(/\\n/g, "\n");
         const now = Math.floor(Date.now() / 1000);
@@ -193,7 +186,6 @@ export async function handleWorkflowRunEvent(payload: any) {
           { algorithm: "RS256" }
         );
 
-        // Get installation token
         const tokenRes = await fetch(
           `https://api.github.com/app/installations/${installationId}/access_tokens`,
           {
@@ -206,7 +198,6 @@ export async function handleWorkflowRunEvent(payload: any) {
         );
         const tokenData = await tokenRes.json();
 
-        // Find PRs for this commit
         const prRes = await fetch(
           `https://api.github.com/repos/${repository.full_name}/commits/${run.head_sha}/pulls`,
           {
@@ -219,32 +210,50 @@ export async function handleWorkflowRunEvent(payload: any) {
         const prs = await prRes.json();
 
         if (Array.isArray(prs) && prs.length > 0) {
-          const prNumber = prs[0].number;
+          const prNumber = prs.number;
 
-          const comment = buildFailureComment({
-            repoName: repository.full_name,
-            workflowName: run.name,
-            score: riskScore || 0,
-            riskLevel: riskScore ? (riskScore > 70 ? "danger" : riskScore > 40 ? "warning" : "safe") : "safe",
-            commitSha: run.head_sha,
-            branch: run.head_branch || "main",
-            triggeredBy: run.actor?.login || "unknown",
-            errorSummary: run.conclusion === "failure" ? `Workflow "${run.name}" failed on branch ${run.head_branch}` : undefined,
-            costUsd: costResult?.cost,
-            duration: run.run_started_at
-              ? Math.round((new Date(run.updated_at).getTime() - new Date(run.run_started_at).getTime()) / 1000)
-              : undefined,
-          });
+          // FIX 5: Only post failure comment on actual failures
+          if (run.conclusion === "failure") {
+            const comment = buildFailureComment({
+              repoName: repository.full_name,
+              workflowName: run.name,
+              score: riskScore || 0,
+              riskLevel: riskScore
+                ? riskScore > 70
+                  ? "danger"
+                  : riskScore > 40
+                  ? "warning"
+                  : "safe"
+                : "safe",
+              commitSha: run.head_sha,
+              branch: run.head_branch || "main",
+              triggeredBy: run.actor?.login || "unknown",
+              errorSummary: `Workflow "${run.name}" failed on branch ${run.head_branch}`,
+              costUsd: costResult?.cost,
+              duration: run.run_started_at
+                ? Math.round(
+                    (new Date(run.updated_at).getTime() -
+                      new Date(run.run_started_at).getTime()) /
+                      1000
+                  )
+                : undefined,
+            });
 
-          await postPRComment(installationId, owner, repoName, prNumber, comment);
-          console.log(`Posted PR comment on ${repository.full_name}#${prNumber}`);
+            // FIX 2 & 4: postPRComment + result assignment now correctly inside the if block
+            await postPRComment(installationId, owner, repoName, prNumber, comment);
+            console.log(`Posted PR comment on ${repository.full_name}#${prNumber}`);
+            prCommentResult = { posted: true, pr: prNumber };
+          }
+        } else {
+          prCommentResult = { posted: false, reason: "no PRs found for commit", prsResponse: prs };
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      prCommentResult = { posted: false, error: err.message || String(err) };
       console.error("PR comment failed:", err);
     }
   }
-  // Send Slack alerts
+
   if (pipelineRun) {
     try {
       const { data: alertConfigs } = await getSupabase()
@@ -258,29 +267,36 @@ export async function handleWorkflowRunEvent(payload: any) {
         for (const config of alertConfigs) {
           if (!config.webhook_url) continue;
 
-          // High risk alert
           if (riskScore && riskScore >= (config.risk_threshold || 80)) {
-            await sendSlackAlert(config.webhook_url, buildRiskAlertMessage({
-              repoName: repository.full_name,
-              score: riskScore,
-              riskLevel: riskScore > 70 ? "danger" : "warning",
-              commitMessage: run.head_commit?.message?.split("\n")[0] || "No message",
-              triggeredBy: run.actor?.login || "unknown",
-              branch: run.head_branch || "main",
-              htmlUrl: run.html_url,
-            }));
+            await sendSlackAlert(
+              config.webhook_url,
+              buildRiskAlertMessage({
+                repoName: repository.full_name,
+                score: riskScore,
+                riskLevel: riskScore > 70 ? "danger" : "warning",
+                commitMessage:
+                  run.head_commit?.message?.split("\n") || "No message",
+                triggeredBy: run.actor?.login || "unknown",
+                branch: run.head_branch || "main",
+                htmlUrl: run.html_url,
+              })
+            );
           }
 
-          // Incident alert
           if (config.incident_alerts && run.conclusion === "failure") {
-            await sendSlackAlert(config.webhook_url, buildIncidentAlertMessage({
-              repoName: repository.full_name,
-              title: `${repository.name} — ${run.name} failed`,
-              errorSummary: run.head_commit?.message?.split("\n")[0] || "Deploy failed",
-              triggeredBy: run.actor?.login || "unknown",
-              branch: run.head_branch || "main",
-              commitMessage: run.head_commit?.message?.split("\n")[0] || "No message",
-            }));
+            await sendSlackAlert(
+              config.webhook_url,
+              buildIncidentAlertMessage({
+                repoName: repository.full_name,
+                title: `${repository.name} — ${run.name} failed`,
+                errorSummary:
+                  run.head_commit?.message?.split("\n") || "Deploy failed",
+                triggeredBy: run.actor?.login || "unknown",
+                branch: run.head_branch || "main",
+                commitMessage:
+                  run.head_commit?.message?.split("\n") || "No message",
+              })
+            );
           }
         }
       }
@@ -288,6 +304,13 @@ export async function handleWorkflowRunEvent(payload: any) {
       console.error("Slack alerts failed:", err);
     }
   }
-  return { success: true, pipeline_run_id: pipelineRun?.id, riskScore, riskError, costResult };
 
+  return {
+    success: true,
+    pipeline_run_id: pipelineRun?.id,
+    riskScore,
+    riskError,
+    costResult,
+    prComment: prCommentResult,
+  };
 }
