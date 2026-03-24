@@ -86,7 +86,7 @@ export async function calculateCIWaste(
     failGroups[key] = (failGroups[key] || 0) + 1;
   });
   const repeatedFailures = Object.entries(failGroups).filter(([, count]) => count >= 3);
-  const repeatedCost = repeatedFailures.reduce(([, count]) => count, 0) * 0.008; // estimate
+  const repeatedCost = repeatedFailures.reduce((sum, [, count]) => sum + count, 0) * 0.008;
 
   if (repeatedFailures.length > 0) {
     const totalRepeated = repeatedFailures.reduce((sum, [, count]) => sum + count, 0);
