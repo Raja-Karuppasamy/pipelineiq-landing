@@ -34,26 +34,30 @@ export async function postPRComment(
   repo: string,
   prNumber: number,
   body: string
-): Promise<boolean> {
+): Promise<any> {
   try {
     const token = await getInstallationToken(installationId);
 
-    const res = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/issues/${prNumber}/comments`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `token ${token}`,
-          Accept: "application/vnd.github+json",
-        },
-        body: JSON.stringify({ body }),
-      }
-    );
+    const url = `https://api.github.com/repos/${owner}/${repo}/issues/${prNumber}/comments`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `token ${token}`,
+        Accept: "application/vnd.github+json",
+      },
+      body: JSON.stringify({ body }),
+    });
 
-    return res.ok;
-  } catch (err) {
+    if (res.ok) {
+      return true;
+    } else {
+      const errBody = await res.text();
+      console.error("PR comment API error:", res.status, errBody);
+      return { failed: true, status: res.status, error: errBody };
+    }
+  } catch (err: any) {
     console.error("Failed to post PR comment:", err);
-    return false;
+    return { failed: true, error: err.message };
   }
 }
 
