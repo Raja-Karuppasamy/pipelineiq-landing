@@ -72,6 +72,13 @@ export function buildFailureComment(data: {
   errorSummary?: string;
   costUsd?: number;
   duration?: number;
+  riskFactors?: {
+    lines_changed_score: number;
+    files_changed_score: number;
+    test_result_score: number;
+    time_score: number;
+    author_score: number;
+  };
 }): string {
   const emoji = data.riskLevel === "danger" ? "🔴" : data.riskLevel === "warning" ? "🟡" : "🟢";
   const statusEmoji = data.score > 70 ? "🚨" : data.score > 40 ? "⚠️" : "✅";
@@ -91,9 +98,33 @@ export function buildFailureComment(data: {
     comment += `| **CI Cost** | $${data.costUsd.toFixed(4)} |\n`;
   }
 
+  // Risk breakdown
+  if (data.riskFactors) {
+    const f = data.riskFactors;
+    comment += `\n### Risk Breakdown\n\n`;
+    comment += `| Factor | Score | |\n|--------|-------|---|\n`;
+
+    const factors = [
+      { label: "Lines changed", score: f.lines_changed_score, max: 20, icon: f.lines_changed_score > 10 ? "🔴" : f.lines_changed_score > 5 ? "🟡" : "🟢" },
+      { label: "Files touched", score: f.files_changed_score, max: 20, icon: f.files_changed_score > 10 ? "🔴" : f.files_changed_score > 5 ? "🟡" : "🟢" },
+      { label: "Test results", score: f.test_result_score, max: 20, icon: f.test_result_score > 10 ? "🔴" : f.test_result_score > 5 ? "🟡" : "🟢" },
+      { label: "Time of day", score: f.time_score, max: 20, icon: f.time_score > 10 ? "🔴" : f.time_score > 5 ? "🟡" : "🟢" },
+      { label: "Author history", score: f.author_score, max: 20, icon: f.author_score > 10 ? "🔴" : f.author_score > 5 ? "🟡" : "🟢" },
+    ];
+
+    for (const factor of factors) {
+      const bar = "█".repeat(Math.round(factor.score / 2)) + "░".repeat(10 - Math.round(factor.score / 2));
+      comment += `| ${factor.icon} ${factor.label} | ${factor.score}/${factor.max} | \`${bar}\` |\n`;
+    }
+  }
+
   if (data.errorSummary) {
     comment += `\n### Failure Details\n`;
     comment += `\`\`\`\n${data.errorSummary}\n\`\`\`\n`;
+  }
+
+  if (data.score > 70) {
+    comment += `\n> ⚠️ **High risk deploy detected.** Consider adding tests, requesting a review, or deploying during business hours.\n`;
   }
 
   comment += `\n---\n`;
@@ -101,7 +132,6 @@ export function buildFailureComment(data: {
 
   return comment;
 }
-
 export function buildRecurringFailureComment(data: {
   workflowName: string;
   failureCount: number;

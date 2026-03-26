@@ -213,6 +213,17 @@ export async function handleWorkflowRunEvent(payload: any) {
           const prNumber = prs[0].number;
           prCommentResult.prNumber = prNumber;
 
+          // Fetch risk factors from deploy_scores
+          let riskFactors = undefined;
+          try {
+            const { data: scoreData } = await getSupabase()
+              .from("deploy_scores")
+              .select("lines_changed_score, files_changed_score, test_result_score, time_score, author_score")
+              .eq("pipeline_run_id", pipelineRun.id)
+              .single();
+            if (scoreData) riskFactors = scoreData;
+          } catch {}
+
           const comment = buildFailureComment({
             repoName: repository.full_name,
             workflowName: run.name,
@@ -226,6 +237,7 @@ export async function handleWorkflowRunEvent(payload: any) {
             duration: run.run_started_at
               ? Math.round((new Date(run.updated_at).getTime() - new Date(run.run_started_at).getTime()) / 1000)
               : undefined,
+            riskFactors,
           });
 
           const posted = await postPRComment(installationId, owner, repoName, prNumber, comment);
