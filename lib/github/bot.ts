@@ -74,8 +74,8 @@ export function buildFailureComment(data: {
     lines_changed_score: number;
     files_touched_score: number;
     test_result_score: number;
-    time_score: number;
-    author_score: number;
+    time_factor_score: number;
+    author_history_score: number;
   };
 }): string {
   const emoji = data.riskLevel === "danger" ? "🔴" : data.riskLevel === "warning" ? "🟡" : "🟢";
@@ -105,8 +105,8 @@ export function buildFailureComment(data: {
       { label: "Lines changed", score: f.lines_changed_score, icon: f.lines_changed_score > 10 ? "🔴" : f.lines_changed_score > 5 ? "🟡" : "🟢" },
       { label: "Files touched", score: f.files_touched_score, icon: f.files_touched_score > 10 ? "🔴" : f.files_touched_score > 5 ? "🟡" : "🟢" },
       { label: "Test results", score: f.test_result_score, icon: f.test_result_score > 10 ? "🔴" : f.test_result_score > 5 ? "🟡" : "🟢" },
-      { label: "Time of day", score: f.time_score, icon: f.time_score > 10 ? "🔴" : f.time_score > 5 ? "🟡" : "🟢" },
-      { label: "Author history", score: f.author_score, icon: f.author_score > 10 ? "🔴" : f.author_score > 5 ? "🟡" : "🟢" },
+      { label: "Time of day", score: f.time_factor_score, icon: f.time_factor_score > 10 ? "🔴" : f.time_factor_score > 5 ? "🟡" : "🟢" },
+      { label: "Author history", score: f.author_history_score, icon: f.author_history_score > 10 ? "🔴" : f.author_history_score > 5 ? "🟡" : "🟢" },
     ];
 
     for (const factor of factors) {
