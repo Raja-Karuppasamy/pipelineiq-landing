@@ -218,7 +218,7 @@ export async function handleWorkflowRunEvent(payload: any) {
           try {
             const { data: scoreData } = await getSupabase()
               .from("deploy_scores")
-              .select("lines_changed_score, files_changed_score, test_result_score, time_score, author_score")
+              .select("lines_changed_score, files_touched_score, test_result_score, time_score, author_score")
               .eq("pipeline_run_id", pipelineRun.id)
               .single();
             if (scoreData) riskFactors = scoreData;

@@ -4,7 +4,6 @@ async function getInstallationToken(installationId: number): Promise<string> {
   const privateKey = process.env.GITHUB_APP_PRIVATE_KEY!.replace(/\\n/g, "\n");
   const appId = process.env.GITHUB_APP_ID!;
 
-  // Create JWT
   const now = Math.floor(Date.now() / 1000);
   const token = jwt.sign(
     { iat: now - 60, exp: now + 600, iss: appId },
@@ -12,7 +11,6 @@ async function getInstallationToken(installationId: number): Promise<string> {
     { algorithm: "RS256" }
   );
 
-  // Exchange JWT for installation token
   const res = await fetch(
     `https://api.github.com/app/installations/${installationId}/access_tokens`,
     {
@@ -74,7 +72,7 @@ export function buildFailureComment(data: {
   duration?: number;
   riskFactors?: {
     lines_changed_score: number;
-    files_changed_score: number;
+    files_touched_score: number;
     test_result_score: number;
     time_score: number;
     author_score: number;
@@ -98,23 +96,22 @@ export function buildFailureComment(data: {
     comment += `| **CI Cost** | $${data.costUsd.toFixed(4)} |\n`;
   }
 
-  // Risk breakdown
   if (data.riskFactors) {
     const f = data.riskFactors;
     comment += `\n### Risk Breakdown\n\n`;
     comment += `| Factor | Score | |\n|--------|-------|---|\n`;
 
     const factors = [
-      { label: "Lines changed", score: f.lines_changed_score, max: 20, icon: f.lines_changed_score > 10 ? "🔴" : f.lines_changed_score > 5 ? "🟡" : "🟢" },
-      { label: "Files touched", score: f.files_changed_score, max: 20, icon: f.files_changed_score > 10 ? "🔴" : f.files_changed_score > 5 ? "🟡" : "🟢" },
-      { label: "Test results", score: f.test_result_score, max: 20, icon: f.test_result_score > 10 ? "🔴" : f.test_result_score > 5 ? "🟡" : "🟢" },
-      { label: "Time of day", score: f.time_score, max: 20, icon: f.time_score > 10 ? "🔴" : f.time_score > 5 ? "🟡" : "🟢" },
-      { label: "Author history", score: f.author_score, max: 20, icon: f.author_score > 10 ? "🔴" : f.author_score > 5 ? "🟡" : "🟢" },
+      { label: "Lines changed", score: f.lines_changed_score, icon: f.lines_changed_score > 10 ? "🔴" : f.lines_changed_score > 5 ? "🟡" : "🟢" },
+      { label: "Files touched", score: f.files_touched_score, icon: f.files_touched_score > 10 ? "🔴" : f.files_touched_score > 5 ? "🟡" : "🟢" },
+      { label: "Test results", score: f.test_result_score, icon: f.test_result_score > 10 ? "🔴" : f.test_result_score > 5 ? "🟡" : "🟢" },
+      { label: "Time of day", score: f.time_score, icon: f.time_score > 10 ? "🔴" : f.time_score > 5 ? "🟡" : "🟢" },
+      { label: "Author history", score: f.author_score, icon: f.author_score > 10 ? "🔴" : f.author_score > 5 ? "🟡" : "🟢" },
     ];
 
     for (const factor of factors) {
       const bar = "█".repeat(Math.round(factor.score / 2)) + "░".repeat(10 - Math.round(factor.score / 2));
-      comment += `| ${factor.icon} ${factor.label} | ${factor.score}/${factor.max} | \`${bar}\` |\n`;
+      comment += `| ${factor.icon} ${factor.label} | ${factor.score}/20 | \`${bar}\` |\n`;
     }
   }
 
@@ -132,6 +129,7 @@ export function buildFailureComment(data: {
 
   return comment;
 }
+
 export function buildRecurringFailureComment(data: {
   workflowName: string;
   failureCount: number;
